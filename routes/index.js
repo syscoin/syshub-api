@@ -114,75 +114,24 @@ router.get('/curl', function(req, res) {
 });
 
 router.post('/vote', function(req, res) {
-  var mnPrivateKey = req.body.mnPrivateKey;
-  var vinMasternode = req.body.vinMasternode;
-  var time = Math.floor(Date.now() / 1000);
-  var gObjectHashBuffer = Buffer.from(req.body.gObjectHash, 'hex');
-  var voteSignalNum = 1; // 'funding'
-  var voteOutcomeNum = req.body.voteOutcome; // 1 for yes. 2 for no. 0 for abstain
-
-  var masterNodeTx = vinMasternode.split('-');
-
-  var vinMasternodeBuffer = Buffer.from(masterNodeTx[0], 'hex');
-  swapEndiannessInPlace(vinMasternodeBuffer);
-
-  const vinMasternodeIndexBuffer = Buffer.allocUnsafe(4);
-  var outputIndex = parseInt(masterNodeTx[1]);
-  vinMasternodeIndexBuffer.writeInt32LE(outputIndex);
-
-  var gObjectHashBufferLE = swapEndianness(gObjectHashBuffer);
-
-  const voteOutcomeBuffer = Buffer.allocUnsafe(4);
-  voteOutcomeBuffer.writeInt32LE(voteOutcomeNum);
-
-  const voteSignalBuffer = Buffer.allocUnsafe(4);
-  voteSignalBuffer.writeInt32LE(voteSignalNum);
-
-  var timeBuffer = new Int64LE(time).toBuffer();
-  var message = Buffer.concat([
-    vinMasternodeBuffer,
-    vinMasternodeIndexBuffer,
-    gObjectHashBufferLE,
-    voteOutcomeBuffer,
-    voteSignalBuffer,
-    timeBuffer
-  ]);
-
-  var hash = Bitcoin.crypto.hash256(message);
-  var keyPair = Bitcoin.ECPair.fromWIF(mnPrivateKey);
-  const sigObj = secp256k1.sign(hash, keyPair.privateKey);
-
-  var recId = 0;
-  recId = 27 + sigObj.recovery + (keyPair.compressed ? 4 : 0);
-
-  const recIdBuffer = Buffer.allocUnsafe(1);
-  recIdBuffer.writeInt8(recId);
-  var rawSignature = Buffer.concat([recIdBuffer, sigObj.signature]);
-  var signature = rawSignature.toString('base64');
-
-  var vote;
-  var signal;
-
-  // Note: RPC command uses english, signed vote message uses numbers
-  if (voteSignalNum == 0) signal = 'none';
-  if (voteSignalNum == 1) signal = 'funding'; // -- fund this object for it's stated amount
-  if (voteSignalNum == 2) signal = 'valid'; //   -- this object checks out in sentinel engine
-  if (voteSignalNum == 3) signal = 'delete'; //  -- this object should be deleted from memory entirely
-  if (voteSignalNum == 4) signal = 'endorsed'; //   -- officially endorsed by the network somehow (delegation)
-
-  if (voteOutcomeNum == 0) vote = 'none';
-  if (voteOutcomeNum == 1) vote = 'yes';
-  if (voteOutcomeNum == 2) vote = 'no';
-  if (voteOutcomeNum == 3) vote = 'abstain';
+  const {
+    txHash,
+    txIndex,
+    governanceHash,
+    signal,
+    vote,
+    time,
+    signature
+  } = req.body
 
   // voteraw masternode-tx-hash masternode-tx-index governance-hash vote-signal [yes|no|abstain] time vote-sig
   var rpcCommand =
     'voteraw ' +
-    masterNodeTx[0] +
+    txHash +
     ' ' +
-    masterNodeTx[1] +
+    txIndex +
     ' ' +
-    gObjectHashBuffer.toString('hex') +
+    governanceHash +
     ' ' +
     signal +
     ' ' +
