@@ -8,7 +8,7 @@
   "dependencies": {
     "@types/bitcoinjs-lib": "^4.0.0",
     "babel-preset-stage-2": "^6.24.1",
-    "bitcoinjs-lib": "^4.0.2",
+    "bitcoinjs-lib": "^4.0.5",
     "body-parser": "^1.18.2",
     "buffer-math": "^0.3.0",
     "child-process-promise": "^2.2.1",
