@@ -6,12 +6,12 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var forceSsl = require('express-force-ssl');
-var https = require('https');
+// var https = require('https');
 var http = require('http');
 
-var hskey;
-var hscert;
-var hscsr;
+// var hskey;
+// var hscert;
+// var hscsr;
 
 var prodURL = 'sysapiprod.cortesa.net';
 var testURL = 'sysapidev.cortesa.net';
@@ -20,27 +20,27 @@ var serverCerts = fs.existsSync(`/etc/letsencrypt/live/${prodURL}`)
   ? `/etc/letsencrypt/live/${prodURL}`
   : `/etc/letsencrypt/live/${testURL}`;
 
-if (fs.existsSync(serverCerts)) {
-  hskey = fs.readFileSync(`${serverCerts}/privkey.pem`);
-  hscert = fs.readFileSync(`${serverCerts}/cert.pem`);
-  hscsr = fs.readFileSync(`${serverCerts}/chain.pem`);
-  // Do something
-} else {
-  hskey = fs.readFileSync('./certificates/private.key');
-  hscert = fs.readFileSync('./certificates/certificate.crt');
-  hscsr = fs.readFileSync('./certificates/ca_bundle.crt');
-}
+// if (fs.existsSync(serverCerts)) {
+//   hskey = fs.readFileSync(`${serverCerts}/privkey.pem`);
+//   hscert = fs.readFileSync(`${serverCerts}/cert.pem`);
+//   hscsr = fs.readFileSync(`${serverCerts}/chain.pem`);
+//   // Do something
+// } else {
+//   hskey = fs.readFileSync('./certificates/private.key');
+//   hscert = fs.readFileSync('./certificates/certificate.crt');
+//   hscsr = fs.readFileSync('./certificates/ca_bundle.crt');
+// }
 
-var options = {
-  key: hskey,
-  cert: hscert,
-  ca: hscsr
-};
+// var options = {
+//   key: hskey,
+//   cert: hscert,
+//   ca: hscsr
+// };
 
 var index = require('./routes/index');
 
 var app = express();
-app.use(forceSsl);
+// app.use(forceSsl);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -73,6 +73,6 @@ app.use(function(err, req, res, next) {
 });
 
 // Create an HTTP service.
-http.createServer(app).listen(80);
+http.createServer(app).listen(3000);
 // Create an HTTPS service identical to the HTTP service.
-https.createServer(options, app).listen(443);
+// https.createServer(options, app).listen(443);

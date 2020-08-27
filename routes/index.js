@@ -13,18 +13,19 @@ const {swapEndiannessInPlace, swapEndianness} = require('buffer-math');
 router.use(cors());
 
 /* GET home page and checks. */
-router.get('/', function (req, res, next) {
-  res.render('index.hjs', {title: 'Syshub-api'});
-});
+// router.get('/', function (req, res, next) {
+//   res.render('index.hjs', {title: 'Syshub-api'});
+// });
 
-router.get('/createzone', function (req, res, next) {
-  res.render('createzone.hjs', null);
-});
+// router.get('/createzone', function (req, res, next) {
+//   res.render('createzone.hjs', null);
+// });
 
-router.get('/createcomment', function (req, res, next) {
-  res.render('createcomment.hjs', null);
-});
+// router.get('/createcomment', function (req, res, next) {
+//   res.render('createcomment.hjs', null);
+// });
 
+router.get('', (req, res) => res.status(200).json({ok: true, message: "Syshub-api"}))
 router.get('/check', function (req, res) {
   res.send({status: 'true', message: 'API server up and running'});
 });
