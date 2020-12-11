@@ -1,0 +1,11 @@
+<div *ngIf="hashs?.length===0">
+  <span class="alert alert-danger btn-block">there are no hash of proposals!</span>
+</div>
+
+<ul class="list-group">
+  <li class="list-group-item" *ngFor="let elem of hashs; index as i;">
+    <span class="float-left">{{i + 1}} - </span>
+    <p class="text-center" style="word-wrap: break-word;"> {{elem?.hash}} </p>
+    <button class="btn btn-danger float-right" (click)="destroyProposalHiddenHash(elem?.uid)">Delete</button>
+  </li>
+</ul>

@@ -1,0 +1,20 @@
+<div class="container">
+  <app-navbar></app-navbar>
+  <div class="row mt-5">
+    <div class="col-xs-12 col-sm-4 col-md-4">
+      <app-add-hash
+        (newHash)="proposalHashCreated($event)"
+      ></app-add-hash>
+    </div>
+    <div class="centrado" *ngIf="loader">
+      <app-loading></app-loading>
+    </div>
+    <div class="col-xs-12 col-sm-8 col-md-8 mt-2">
+      <app-list-hash
+        *ngIf="!loader"
+        [hashs]="hashs"
+        (refreshList)="updateListProposalHidden($event)"
+      ></app-list-hash>
+    </div>
+  </div>
+</div>

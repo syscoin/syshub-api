@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: middlewares/fbAuth.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: middlewares/fbAuth.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const {admin} = require('../utils/config');
+const {decryptAes} = require('../utils/encrypt')
+
+/**
+ * @function
+ * @name firebaseAuthenticated
+ * @desc remove a masterNode from db
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.header.Authorization obtaining the token
+ * @param {string} req.user is an opaque identifier for a user account obtained from the token.
+ * @param {function} next middleware success
+ *
+ * @return {object} positive answer
+ */
+let firebaseAuthenticated = (req, res, next) => {
+  try {
+    let token;
+    let reg = /"/g;
+    if (req.header('Authorization')) {
+      token = decryptAes(req.header('Authorization').replace('Bearer', '').trim(), process.env.KEY_FOR_ENCRYPTION)
+      admin.auth().verifyIdToken(token.replace(reg, '')).then((decodedToken) => {
+        admin.auth().getUser(decodedToken.uid).then((user) => {
+          if ((new Date().getTime() / 1000) > decodedToken.exp) {
+            return res.status(401).json({ok: false, message: 'Not authenticated'});
+          }
+          if (decodedToken.uid === user.uid) {
+            req.user = user.uid
+            return next()
+          }
+        }).catch((err) => {
+          throw err
+        })
+      }).catch((err) => {
+        if (err.message.split('.')[0] === 'Firebase ID token has "kid" claim which does not correspond to a known public key') return res.status(401).json({ok: false, message: 'token has expired'});
+        if (err.message.split('.')[0] === 'Firebase ID token has expired') return res.status(401).json({ok: false, message: 'token has expired'});
+        if (err.message.split('.')[0] === 'Decoding Firebase ID token failed') return res.status(401).json({ok: false, message: 'Decoding Firebase ID token failed.'});
+        throw err
+      })
+    } else {
+      return res.status(401).json({ok: false, message: 'Not authenticated'})
+    }
+  } catch (err) {
+    throw err
+  }
+}
+
+module.exports = firebaseAuthenticated;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#check">check</a></li><li><a href="global.html#countMasterNodes">countMasterNodes</a></li><li><a href="global.html#createHiddenProposal">createHiddenProposal</a></li><li><a href="global.html#createMasterNode">createMasterNode</a></li><li><a href="global.html#deleteHiddenProposal">deleteHiddenProposal</a></li><li><a href="global.html#deleteProposal">deleteProposal</a></li><li><a href="global.html#deleteUser">deleteUser</a></li><li><a href="global.html#destroyMasterNode">destroyMasterNode</a></li><li><a href="global.html#firebaseAuthenticated">firebaseAuthenticated</a></li><li><a href="global.html#getAllHiddenProposal">getAllHiddenProposal</a></li><li><a href="global.html#getAllMasterNodesByUser">getAllMasterNodesByUser</a></li><li><a href="global.html#getGovernanceInfo">getGovernanceInfo</a></li><li><a href="global.html#getMasterNode">getMasterNode</a></li><li><a href="global.html#getMiningInfo">getMiningInfo</a></li><li><a href="global.html#getOneProposal">getOneProposal</a></li><li><a href="global.html#getOneUser">getOneUser</a></li><li><a href="global.html#getProposalsPendingByUser">getProposalsPendingByUser</a></li><li><a href="global.html#getSuperBlockBudget">getSuperBlockBudget</a></li><li><a href="global.html#getUser2fa">getUser2fa</a></li><li><a href="global.html#info">info</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#prepare">prepare</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#submit">submit</a></li><li><a href="global.html#updateActionsUser">updateActionsUser</a></li><li><a href="global.html#updateMaterNode">updateMaterNode</a></li><li><a href="global.html#updateProposal">updateProposal</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#verifyClient">verifyClient</a></li><li><a href="global.html#vote">vote</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Wed Dec 02 2020 15:50:05 GMT-0400 (GMT-04:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

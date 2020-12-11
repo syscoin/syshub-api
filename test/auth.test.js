@@ -1,0 +1,55 @@
+const request = require('./config');
+const {expect, describe, it, beforeAll} = require("@jest/globals");
+
+describe('Authenticated', () => {
+  it('valid user login', async done => {
+    let payload = {
+      email: 'test@syscoin.org',
+      password: '123456'
+    }
+    await request
+      .post('/auth/login')
+      .set('Content-type', 'application/json')
+      .set('appclient', 'sysnode-info')
+      .send(payload)
+      .then(res => {
+        expect(res.statusCode).toBe(200)
+        expect(JSON.parse(res.text).ok).toEqual(true)
+        done();
+      }, 30000)
+  });
+
+  it('Invalid user login', async done => {
+    let payload = {
+      email: 'test@gmail.com',
+      password: '123456'
+    }
+    await request
+      .post('/auth/login')
+      .set('Content-type', 'application/json')
+      .set('appclient', 'sysnode-info')
+      .send(payload)
+      .then(res => {
+        expect(res.statusCode).toBe(406)
+        expect(JSON.parse(res.text)).toEqual({"ok": false, "message": "wrong username or password"})
+        done();
+      }, 30000)
+  });
+
+  it('registered user', async done => {
+    let payload = {
+      uid: '5uLeG9jbojfOIyPvzEOaNqx2y6F3'
+    }
+    await request
+      .post('/auth/register')
+      .set('Content-type', 'application/json')
+      .set('appclient', 'sysnode-info')
+      .send(payload)
+      .then(res => {
+        expect(res.statusCode).toBe(406)
+        expect(JSON.parse(res.text)).toEqual({ok: false, message: 'Existing users'})
+        done();
+      }, 30000)
+  });
+
+})

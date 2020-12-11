@@ -1,0 +1,8 @@
+.centrado{
+  margin-top: 15vh;
+  display:block;
+  margin-left: auto;
+  margin-right: auto;
+  top: 50%;
+  transform: translatey(-50%);
+}
