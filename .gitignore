@@ -1,3 +1,4 @@
 /node_modules
 /.idea
 /frontend/dashboard/node_modules
+/.env
