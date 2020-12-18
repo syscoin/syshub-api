@@ -101,53 +101,59 @@ const list = async (req, res, next) => {
     let proposals = [];
     let hiddenProposal = [];
     let proposalResp = [];
+
     let listProposalsHidden = await admin.firestore().collection(process.env.COLLECTION_PROPOSAL_HIDDEN).get().catch(err => {
       throw err
     })
+
     await listProposalsHidden._docs().map(doc => {
       hiddenProposal.push(doc._fieldsProto.hash.stringValue)
     })
-    let list = await rpcServices(clientRPC.callRpc).gObject('list').call(true).catch(err => {
+
+    let gObjectList = await clientRPC.callRpc("gobject_list").call().catch(err => {
       throw err
     })
-    for (const key in list) {
-      let k = list[key]
-      let bb = JSON.parse(k['DataString']);
-      let Hash = k['Hash'];
-      let ColHash = k['CollateralHash'];
-      let ObectType = k['ObjectType'];
-      let CreationTime = k['CreationTime'];
-      let AbsoluteYesCount = k['AbsoluteYesCount'];
-      let YesCount = k['YesCount'];
-      let NoCount = k['NoCount'];
-      let AbstainCount = k['AbstainCount'];
-      let fBlockchainValidity = k['fBlockchainValidity'];
-      let IsValidReason = k['IsValidReason'];
-      let fCachedValid = k['fCachedValid'];
-      let fCachedFunding = k['fCachedFunding'];
-      let fCachedDelete = k['fCachedDelete'];
-      let fCachedEndorsed = k['fCachedEndorsed'];
-      let obj = {
-        Hash,
-        ColHash,
-        ObectType,
-        CreationTime,
-        AbsoluteYesCount,
-        YesCount,
-        NoCount,
-        AbstainCount,
-        fBlockchainValidity,
-        IsValidReason,
-        fCachedValid,
-        fCachedFunding,
-        fCachedDelete,
-        fCachedEndorsed
-      }
-      proposals.push(Object.assign({}, obj, bb[0][1]))
-      proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount) ? 1 : -1)
-    }
 
-    await proposals.map(elem => {
+    for (const gObjectListKey in gObjectList) {
+      if (gObjectList.hasOwnProperty(gObjectListKey)) {
+        let key = gObjectList[gObjectListKey]
+        let bb = JSON.parse(key['DataString']);
+        let Hash = key['Hash'];
+        let ColHash = key['CollateralHash'];
+        let ObjectType = key['ObjectType'];
+        let CreationTime = key['CreationTime'];
+        let AbsoluteYesCount = key['AbsoluteYesCount'];
+        let YesCount = key['YesCount'];
+        let NoCount = key['NoCount'];
+        let AbstainCount = key['AbstainCount'];
+        let fBlockchainValidity = key['fBlockchainValidity'];
+        let IsValidReason = key['IsValidReason'];
+        let fCachedValid = key['fCachedValid'];
+        let fCachedFunding = key['fCachedFunding'];
+        let fCachedDelete = key['fCachedDelete'];
+        let fCachedEndorsed = key['fCachedEndorsed'];
+        let govList = {
+          Hash,
+          ColHash,
+          ObjectType,
+          CreationTime,
+          AbsoluteYesCount,
+          YesCount,
+          NoCount,
+          AbstainCount,
+          fBlockchainValidity,
+          IsValidReason,
+          fCachedValid,
+          fCachedFunding,
+          fCachedDelete,
+          fCachedEndorsed
+        }
+        console.log(bb)
+        proposals.push(Object.assign({}, govList, bb))
+        proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount) ? 1 : -1)
+      }
+    }
+    proposals.map(elem => {
       let hidden = hiddenProposal.find(el => el === elem.Hash)
       if (typeof hidden === "undefined") {
         proposalResp.push(elem)
@@ -438,7 +444,10 @@ const getMasterNode = async (req, res, next) => {
     if (typeof user._fieldsProto === "undefined") return res.status(406).json({ok: false, message: 'non-existent user'});
     // if (user.id !== req.user) return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
     if (typeof user._fieldsProto.mNodeList !== "undefined" && user._fieldsProto.mNodeList.arrayValue.values.length > 0) {
-      if (typeof user._fieldsProto.mNodeList.arrayValue.values.find(e => e.stringValue === id) === "undefined") return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
+      if (typeof user._fieldsProto.mNodeList.arrayValue.values.find(e => e.stringValue === id) === "undefined") return res.status(406).json({
+        ok: false,
+        message: 'you do not have permissions to perform this action'
+      })
       existMasterNodeInUser = user._fieldsProto.mNodeList.arrayValue.values.find(element => element.stringValue === id);
       if (typeof existMasterNodeInUser !== "undefined") {
         let {_fieldsProto} = await admin.firestore().collection(process.env.COLLECTION_NAME_MASTERNODES).doc(id).get().catch(err => {
@@ -572,7 +581,10 @@ const updateMaterNode = async (req, res, next) => {
     let dataEncrypt = {};
     let user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
     if (typeof user._fieldsProto === "undefined") return res.status(406).json({ok: false, message: 'non-existent user'});
-    if (typeof user._fieldsProto.mNodeList.arrayValue.values.find(e => e.stringValue === id) === "undefined") return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
+    if (typeof user._fieldsProto.mNodeList.arrayValue.values.find(e => e.stringValue === id) === "undefined") return res.status(406).json({
+      ok: false,
+      message: 'you do not have permissions to perform this action'
+    })
     // if (user.id !== req.user) return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
     if (!data) return res.status(406).json({ok: false, message: 'Required fields'});
     if (!checkMN(data)) return res.status(406).json({ok: false, messasge: 'invalid MasterNode'});
