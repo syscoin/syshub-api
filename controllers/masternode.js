@@ -280,8 +280,8 @@ const getGovernanceInfo = async (req, res, next) => {
       .callRpc('getgovernanceinfo')
       .call()
       .catch(err => {
-      throw err
-    })
+        throw err
+      })
 
     return res.status(200).json(getGovernanceInfo);
   } catch (err) {
@@ -306,24 +306,38 @@ const getGovernanceInfo = async (req, res, next) => {
 
 const getSuperBlockBudget = async (req, res, next) => {
   try {
-    let getGovernanceInfo = await clientRPC.callRpc('getgovernanceinfo').call().catch(err => {
-      throw err
-    })
+
+    let getGovernanceInfo = await clientRPC
+      .callRpc('getgovernanceinfo')
+      .call()
+      .catch(err => {
+        throw err
+      })
+
     let {lastsuperblock, nextsuperblock} = getGovernanceInfo;
-    let getSuperBlockBudgetLast = await rpcServices(clientRPC.callRpc).getSuperblockBudget(lastsuperblock).call(true).catch(err => {
-      throw err
-    })
-    let getSuperBlockBudgetNext = await rpcServices(clientRPC.callRpc).getSuperblockBudget(nextsuperblock).call(true).catch(err => {
-      throw err
-    })
+
+    let getSuperBlockBudgetLast = await clientRPC
+      .callRpc("getsuperblockbudget", [lastsuperblock])
+      .call(true)
+      .catch(err => {
+        throw err
+      })
+
+    let getSuperBlockBudgetNext = await clientRPC
+      .callRpc("getsuperblockbudget", [nextsuperblock])
+      .call(true)
+      .catch(err => {
+        throw err
+      })
+
     let lbs = {block: lastsuperblock, budget: getSuperBlockBudgetLast};
     let nbs = {block: nextsuperblock, budget: getSuperBlockBudgetNext};
+
     return res.status(200).json({ok: true, lbs: lbs, nbs: nbs})
   } catch (err) {
     next(err)
   }
 }
-
 
 /**
  * @function
