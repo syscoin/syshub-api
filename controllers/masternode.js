@@ -275,9 +275,14 @@ const getMiningInfo = async (req, res, next) => {
  */
 const getGovernanceInfo = async (req, res, next) => {
   try {
-    let getGovernanceInfo = await clientRPC.callRpc('getgovernanceinfo').call().catch(err => {
+
+    let getGovernanceInfo = await clientRPC
+      .callRpc('getgovernanceinfo')
+      .call()
+      .catch(err => {
       throw err
     })
+
     return res.status(200).json(getGovernanceInfo);
   } catch (err) {
     next(err)
