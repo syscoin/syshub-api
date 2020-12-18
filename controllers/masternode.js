@@ -24,9 +24,12 @@ const {encryptAes, decryptAes} = require('../utils/encrypt');
 const countMasterNodes = async (req, res, next) => {
   try {
 
-    let nMasterNodes = await clientRPC.callRpc("masternode_count").call(true).catch(err => {
-      throw err
-    })
+    let nMasterNodes = await clientRPC
+      .callRpc("masternode_count")
+      .call(true)
+      .catch(err => {
+        throw err
+      })
 
     return res.status(200).json({ok: true, nMasterNodes})
   } catch (err) {
@@ -104,17 +107,23 @@ const list = async (req, res, next) => {
     let hiddenProposal = [];
     let proposalResp = [];
 
-    let listProposalsHidden = await admin.firestore().collection(process.env.COLLECTION_PROPOSAL_HIDDEN).get().catch(err => {
-      throw err
-    })
+    let listProposalsHidden = await admin.firestore()
+      .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
+      .get()
+      .catch(err => {
+        throw err
+      })
 
-    await listProposalsHidden._docs().map(doc => {
+    listProposalsHidden._docs().map(doc => {
       hiddenProposal.push(doc._fieldsProto.hash.stringValue)
     })
 
-    let gObjectList = await clientRPC.callRpc("gobject_list").call().catch(err => {
-      throw err
-    })
+    let gObjectList = await clientRPC
+      .callRpc("gobject_list")
+      .call()
+      .catch(err => {
+        throw err
+      })
 
     for (const gObjectListKey in gObjectList) {
       if (gObjectList.hasOwnProperty(gObjectListKey)) {
@@ -134,6 +143,7 @@ const list = async (req, res, next) => {
         let fCachedFunding = key['fCachedFunding'];
         let fCachedDelete = key['fCachedDelete'];
         let fCachedEndorsed = key['fCachedEndorsed'];
+
         let govList = {
           Hash,
           ColHash,
@@ -150,17 +160,19 @@ const list = async (req, res, next) => {
           fCachedDelete,
           fCachedEndorsed
         }
-        console.log(bb)
+
         proposals.push(Object.assign({}, govList, bb))
         proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount) ? 1 : -1)
       }
     }
+
     proposals.map(elem => {
       let hidden = hiddenProposal.find(el => el === elem.Hash)
       if (typeof hidden === "undefined") {
         proposalResp.push(elem)
       }
     })
+
     return res.status(200).json(proposalResp)
   } catch (err) {
     next(err)
@@ -184,10 +196,15 @@ const list = async (req, res, next) => {
 
 const info = async (req, res, next) => {
   try {
-    let info = await rpcServices(clientRPC.callRpc).getBlockchainInfo().call(true).catch(err => {
-      throw err
-    })
-    return res.status(200).json(info)
+
+    let info = await clientRPC
+      .callRpc("getblockchaininfo")
+      .call(true)
+      .catch(err => {
+        throw err
+      })
+
+    return res.status(200).json({ok: true, BlockChainInfo: info})
   } catch (err) {
     next(err)
   }
