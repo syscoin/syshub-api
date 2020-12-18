@@ -23,10 +23,12 @@ const {encryptAes, decryptAes} = require('../utils/encrypt');
  */
 const countMasterNodes = async (req, res, next) => {
   try {
-    let nMasterNodes = await rpcServices(clientRPC.callRpc).masternode('count').call(true).catch(err => {
+
+    let nMasterNodes = await clientRPC.callRpc("masternode_count").call(true).catch(err => {
       throw err
     })
-    return res.status(200).json(nMasterNodes)
+
+    return res.status(200).json({ok: true, nMasterNodes})
   } catch (err) {
     next(err)
   }
