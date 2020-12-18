@@ -237,9 +237,14 @@ const info = async (req, res, next) => {
  */
 const getMiningInfo = async (req, res, next) => {
   try {
-    let getMiningInfo = await rpcServices(clientRPC.callRpc).getMiningInfo().call(true).catch(err => {
-      throw err
-    });
+
+    let getMiningInfo = await clientRPC
+      .callRpc("getmininginfo")
+      .call(true)
+      .catch(err => {
+        throw err
+      })
+
     return res.status(200).json(getMiningInfo)
   } catch (err) {
     next(err)
