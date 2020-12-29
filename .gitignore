@@ -2,3 +2,4 @@
 /.idea
 /frontend/dashboard/node_modules
 /.env
+/keys*
