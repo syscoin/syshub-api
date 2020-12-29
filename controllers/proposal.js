@@ -557,17 +557,36 @@ const getAllHiddenProposal = async (req, res, next) => {
             .catch(err => {
                 throw err
             })
+        let gobjectData = await clientRPC
+            .callRpc('gobject_list')
+            .call()
+            .catch(err => {
+                throw err
+            })
+
         await data._docs().map(elem => {
             let newData = {};
             for (const key in elem._fieldsProto) {
                 if (elem._fieldsProto.hasOwnProperty(key)) {
                     newData['uid'] = elem.id
                     newData['createTime'] = elem._createTime._seconds
-                    newData[key] = elem._fieldsProto[key].stringValue
+                    newData['hash'] = elem._fieldsProto['hash'].stringValue
                 }
             }
             proposalHash.push(newData)
         })
+
+        proposalHash.map(elem => {
+            for (const subKey in gobjectData) {
+                if (gobjectData.hasOwnProperty(subKey)) {
+                    let key = gobjectData[subKey]
+                    if (elem.hash === subKey) {
+                        elem['extraInfoOfTheProposal'] = JSON.parse(key['DataString'])
+                    }
+                }
+            }
+        })
+
         proposalHash.sort((a, b) => a.createTime - b.createTime).reverse();
         return res.status(200).json({ok: true, proposalHash})
     } catch (err) {

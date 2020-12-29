@@ -25,7 +25,7 @@ router.put('/submit/:id', [fbAuth], submit);
 router.post('/vote', [fbAuth], vote);
 router.put('/:id', [fbAuth], updateProposal);
 router.delete('/:id', [fbAuth], deleteProposal);
-router.get('/hiddenproposal/all', [fbAuth, isAdmin], getAllHiddenProposal);
+router.get('/hiddenproposal/all',[fbAuth, isAdmin], getAllHiddenProposal);
 router.post('/hiddenproposal', [fbAuth, isAdmin], createHiddenProposal);
 router.delete('/hiddenproposal/:hash', [fbAuth, isAdmin], deleteHiddenProposal);
 

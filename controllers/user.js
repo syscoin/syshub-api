@@ -1,6 +1,54 @@
 const {admin} = require('../utils/config');
 const {encryptAes} = require('../utils/encrypt');
 
+
+const getAllUser = async (req, res, next) => {
+    try {
+        let users = [];
+        let userRecordAuth;
+        let userRecordResponse = [];
+
+        let userRecords = await admin.firestore()
+            .collection(process.env.COLLECTION_NAME_USERS)
+            .get()
+            .catch(err => {
+                throw err
+            })
+
+        userRecords.docs.map(async doc => users.push({uid: doc.id}))
+
+        userRecordAuth = await admin.auth()
+            .getUsers(users)
+            .catch(err => {
+                throw err
+            })
+
+        let userRoleRecord = await admin.firestore()
+            .collection(process.env.COLLECTION_NAME_ROLE)
+            .get()
+            .catch(err => {
+                throw err
+            })
+
+        userRecordAuth.users.map(async doc => {
+            userRoleRecord.docs.find(el => {
+                if (el.id === doc.uid) {
+                    let {role} = el.data();
+                    userRecordResponse.push({
+                        uid: doc.uid,
+                        email: doc.email,
+                        name: doc.displayName ? doc.displayName : 'there is no associated display name for this user',
+                        role
+                    })
+                }
+            })
+        })
+        return res.status(200).json({ok: true, users: userRecordResponse})
+    } catch (err) {
+        next(err)
+    }
+}
+
 /**
  * @function
  * @name getOneUser
@@ -348,4 +396,4 @@ const deleteUser = async (req, res, next) => {
 }
 
 
-module.exports = {getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser}
+module.exports = {getAllUser, getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser}

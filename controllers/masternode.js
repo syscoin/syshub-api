@@ -333,8 +333,6 @@ const getSuperBlockBudget = async (req, res, next) => {
 
         let lbs = {block: lastsuperblock, budget: getSuperBlockBudgetLast};
         let nbs = {block: nextsuperblock, budget: getSuperBlockBudgetNext};
-        console.log(lbs)
-        console.log(nbs)
         return res.status(200).json({ok: true, lbs: lbs, nbs: nbs})
     } catch (err) {
         next(err)
