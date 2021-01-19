@@ -12,9 +12,9 @@ const strToHex = (str) => {
     }
     return hex;
   } catch (err) {
-    throw err
+    throw err;
   }
-}
+};
 
 const hexToStr = (hex) => {
   try {
@@ -30,11 +30,11 @@ const hexToStr = (hex) => {
     }
     return str;
   } catch (err) {
-    throw err
+    throw err;
   }
-}
+};
 
 module.exports = {
   strToHex,
-  hexToStr
-}
+  hexToStr,
+};

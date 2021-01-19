@@ -1,15 +1,16 @@
 const checkMN = (mn) => {
   if (RegExp(/-0|-1/).test(mn.txId) !== true) {
     return false;
-  } else if (mn.name && mn.privateKey) {
+  }
+  if (mn.name && mn.privateKey) {
     return true;
   }
-  return false
-}
+  return false;
+};
 
 const checkBodyEmpty = (body) => Object.keys(body).length === 0;
 
 module.exports = {
   checkMN,
-  checkBodyEmpty
-}
+  checkBodyEmpty,
+};
