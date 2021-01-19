@@ -1,37 +1,32 @@
 const request = require('./config');
-const {firebase} = require('../utils/config');
-const {encryptAes} = require("../utils/encrypt");
+const { firebase } = require('../utils/config');
+const { encryptAes } = require('../utils/encrypt');
 
 require('jest-extended');
 
-let email = 'email firebase User'
-let pwd = 'Pwd firebase User'
-const proposalUid = 'Enter proposal Uid'
-const proposalHiddenUid = 'Enter Proposal Hidden Uid'
-const dataHex = 'Enter Proposal DataHex'
-const Hash = 'Enter Proposal Hash'
-const TxId = 'Enter Proposal TxId'
+const email = 'email firebase User';
+const pwd = 'Pwd firebase User';
+const proposalUid = 'Enter proposal Uid';
+const proposalHiddenUid = 'Enter Proposal Hidden Uid';
+const dataHex = 'Enter Proposal DataHex';
+const Hash = 'Enter Proposal Hash';
+const TxId = 'Enter Proposal TxId';
 
-
-const getToken = () => {
-  return new Promise((resolve, reject) => {
-    firebase.auth().signInWithEmailAndPassword(email, pwd)
-      .then(res => {
-        resolve(encryptAes(res.user.xa, process.env.KEY_FOR_ENCRYPTION))
-      })
-      .catch(err => {
-        reject(err)
-      })
-  })
-}
-
+const getToken = () => new Promise((resolve, reject) => {
+  firebase.auth().signInWithEmailAndPassword(email, pwd)
+    .then((res) => {
+      resolve(encryptAes(res.user.xa, process.env.KEY_FOR_ENCRYPTION));
+    })
+    .catch((err) => {
+      reject(err);
+    });
+});
 
 describe('interaction with rpc', () => {
-
-  it('check the data for the execution of creation of a proposal', async done => {
-    let token = await getToken();
-    let today = new Date()
-    let payload = {
+  it('check the data for the execution of creation of a proposal', async (done) => {
+    const token = await getToken();
+    const today = new Date();
+    const payload = {
       type: 1,
       name: 'test',
       title: 'test',
@@ -42,26 +37,26 @@ describe('interaction with rpc', () => {
       endEpoch: today.setDate(today.getDate() + 30),
       paymentAddress: 'sys1qhthrwpu7pyw5yamc7z3akzlx6g5uwngu57wruw',
       paymentAmount: 50000,
-      url: 'empty'
-    }
+      url: 'empty',
+    };
     await request
-      .post(`/proposal/check`)
+      .post('/proposal/check')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
       .send(payload)
-      .then(res => {
+      .then((res) => {
         expect(res.statusCode).toBe(200);
         expect(res.body.ok).toBeBoolean();
-        expect(res.body.message).toEqual('Proposal OK')
-        done()
-      })
+        expect(res.body.message).toEqual('Proposal OK');
+        done();
+      });
   }, 30000);
 
-  it('preparation of a proposal', async done => {
-    let token = await getToken();
-    let today = new Date()
-    let payload = {
+  it('preparation of a proposal', async (done) => {
+    const token = await getToken();
+    const today = new Date();
+    const payload = {
       type: 1,
       name: 'test',
       title: 'test',
@@ -72,34 +67,34 @@ describe('interaction with rpc', () => {
       endEpoch: today.setDate(today.getDate() + 30),
       paymentAddress: 'sys1qhthrwpu7pyw5yamc7z3akzlx6g5uwngu57wruw',
       paymentAmount: 50000,
-      url: 'empty'
-    }
+      url: 'empty',
+    };
     await request
-      .post(`/proposal/prepare`)
+      .post('/proposal/prepare')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
       .send(payload)
-      .then(res => {
-        console.log(res.body)
+      .then((res) => {
+        console.log(res.body);
         expect(res.statusCode).toBe(200);
         expect(res.body.ok).toBeBoolean();
-        expect(res.body.command).toBeString()
-        expect(res.body.uid).toBeString()
-        done()
-      })
-  }, 30000)
+        expect(res.body.command).toBeString();
+        expect(res.body.uid).toBeString();
+        done();
+      });
+  }, 30000);
 
-  it('submit of a proposal ', async done => {
-    let token = await getToken();
-    let today = new Date()
-    let payload = {
+  it('submit of a proposal ', async (done) => {
+    const token = await getToken();
+    const today = new Date();
+    const payload = {
       parentHash: 0,
       revision: 1,
       time: today.getTime(),
-      dataHex: dataHex,
-      txId: TxId
-    }
+      dataHex,
+      txId: TxId,
+    };
 
     await request
       .put(`/proposal/submit/${proposalUid}`)
@@ -107,170 +102,169 @@ describe('interaction with rpc', () => {
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
       .send(payload)
-      .then(res => {
+      .then((res) => {
         expect(res.statusCode).toBe(200);
         expect(res.body.ok).toBeBoolean();
-        expect(res.body.commandSubmit).toBeString()
-        done()
-      })
+        expect(res.body.commandSubmit).toBeString();
+        done();
+      });
   }, 30000);
 
-  it('vote in proposal ', async done => {
-    let token = await getToken();
-    let payload = {
+  it('vote in proposal ', async (done) => {
+    const token = await getToken();
+    const payload = {
       txHash: Hash,
       txIndex: 'Enter txIndex "1 or 0"',
       governanceHash: 'Enter GovernanceHash',
       signal: 'Enter signal -> funding',
       vote: 'Enter Vote 0,1,2',
       time: 'Enter Epoch',
-      signature: 'Enter signature from the wallet'
-    }
+      signature: 'Enter signature from the wallet',
+    };
 
     await request
-      .post(`/proposal/vote`)
+      .post('/proposal/vote')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
       .send(payload)
-      .then(res => {
-        console.log(res.body)
+      .then((res) => {
+        console.log(res.body);
         expect(res.statusCode).toBe(200);
-        done()
-      })
+        done();
+      });
   });
-})
+});
 
 describe('interaction with firebase', () => {
-
-  it('incomplete proposals from a user ', async done => {
-    let token = await getToken();
+  it('incomplete proposals from a user ', async (done) => {
+    const token = await getToken();
     await request
-      .get(`/proposal/pending/recover`)
+      .get('/proposal/pending/recover')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
-      .then(res => {
-        expect(res.statusCode).toBe(200)
-        expect(res.body.ok).toBeBoolean()
-        expect(res.body.proposal).toBeObject()
-        done()
-      })
+      .then((res) => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body.ok).toBeBoolean();
+        expect(res.body.proposal).toBeObject();
+        done();
+      });
   }, 30000);
 
-  it('get the information of a proposal', async done => {
-    let token = await getToken();
+  it('get the information of a proposal', async (done) => {
+    const token = await getToken();
     await request
       .get(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
-      .then(res => {
+      .then((res) => {
         expect(res.statusCode).toBe(200);
         if (res.body.proposal.hash) expect(res.body.proposal.hash.length).toBe(64);
         if (res.body.proposal.txId) expect(res.body.proposal.txId.length).toBe(64);
-        if (res.body.proposal.prepareCommand) expect(res.body.proposal.prepareCommand).toBeString()
-        if (res.body.proposal.commandSubmit) expect(res.body.proposal.commandSubmit).toBeString()
-        expect(res.body.proposal.name).toBeString()
-        expect(res.body.proposal.url).toBeString()
-        expect(res.body.proposal.description).toBeString()
-        expect(res.body.proposal.title).toBeString()
-        done()
-      })
+        if (res.body.proposal.prepareCommand) expect(res.body.proposal.prepareCommand).toBeString();
+        if (res.body.proposal.commandSubmit) expect(res.body.proposal.commandSubmit).toBeString();
+        expect(res.body.proposal.name).toBeString();
+        expect(res.body.proposal.url).toBeString();
+        expect(res.body.proposal.description).toBeString();
+        expect(res.body.proposal.title).toBeString();
+        done();
+      });
   }, 30000);
 
-  it('update a proposal', async done => {
-    let token = await getToken();
+  it('update a proposal', async (done) => {
+    const token = await getToken();
     await request
       .put(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
-      .send({data: {complete: true}})
-      .then(res => {
-        expect(res.body.ok).toBeBoolean()
+      .send({ data: { complete: true } })
+      .then((res) => {
+        expect(res.body.ok).toBeBoolean();
         expect(res.statusCode).toBe(200);
         if (res.body.proposal.hash) expect(res.body.proposal.hash.length).toBe(64);
         if (res.body.proposal.txId) expect(res.body.proposal.txId.length).toBe(64);
-        if (res.body.proposal.prepareCommand) expect(res.body.proposal.prepareCommand).toBeString()
-        if (res.body.proposal.commandSubmit) expect(res.body.proposal.commandSubmit).toBeString()
+        if (res.body.proposal.prepareCommand) expect(res.body.proposal.prepareCommand).toBeString();
+        if (res.body.proposal.commandSubmit) expect(res.body.proposal.commandSubmit).toBeString();
         if (res.body.proposal.prepareObjectProposal) {
-          expect(res.body.proposal.prepareObjectProposal).toBeObject()
-          expect(res.body.proposal.prepareObjectProposal.dataHex).toBeString()
-          expect(res.body.proposal.prepareObjectProposal.parentHash).toEqual('0')
-          expect(res.body.proposal.prepareObjectProposal.revision).toEqual('1')
-          expect(res.body.proposal.prepareObjectProposal.time).toBeString()
+          expect(res.body.proposal.prepareObjectProposal).toBeObject();
+          expect(res.body.proposal.prepareObjectProposal.dataHex).toBeString();
+          expect(res.body.proposal.prepareObjectProposal.parentHash).toEqual('0');
+          expect(res.body.proposal.prepareObjectProposal.revision).toEqual('1');
+          expect(res.body.proposal.prepareObjectProposal.time).toBeString();
         }
-        expect(res.body.proposal.name).toBeString()
-        expect(res.body.proposal.url).toBeString()
-        expect(res.body.proposal.description).toBeString()
-        expect(res.body.proposal.title).toBeString()
-        expect(res.body.proposal.payment_amount).toBeString()
-        expect(res.body.proposal.first_epoch).toBeString()
-        expect(res.body.proposal.start_epoch).toBeString()
-        expect(res.body.proposal.end_epoch).toBeString()
-        expect(res.body.proposal.nPayment).toBeString()
-        expect(res.body.proposal.payment_address).toBeString()
-        done()
-      })
+        expect(res.body.proposal.name).toBeString();
+        expect(res.body.proposal.url).toBeString();
+        expect(res.body.proposal.description).toBeString();
+        expect(res.body.proposal.title).toBeString();
+        expect(res.body.proposal.payment_amount).toBeString();
+        expect(res.body.proposal.first_epoch).toBeString();
+        expect(res.body.proposal.start_epoch).toBeString();
+        expect(res.body.proposal.end_epoch).toBeString();
+        expect(res.body.proposal.nPayment).toBeString();
+        expect(res.body.proposal.payment_address).toBeString();
+        done();
+      });
   }, 30000);
 
-  it('delete a proposal', async done => {
-    let token = await getToken();
+  it('delete a proposal', async (done) => {
+    const token = await getToken();
     await request
       .delete(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .set('Authorization', `Bearer ${token}`)
-      .then(res => {
-        expect(res.statusCode).toBe(200)
-        expect(res.body.ok).toBeBoolean()
-        expect(res.body.message).toEqual('Proposal Removed')
-        done()
-      })
+      .then((res) => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body.ok).toBeBoolean();
+        expect(res.body.message).toEqual('Proposal Removed');
+        done();
+      });
   }, 30000);
 
-  it('get all proposalHidden ', async done => {
+  it('get all proposalHidden ', async (done) => {
     await request
-      .get(`/proposal/hiddenproposal/all`)
+      .get('/proposal/hiddenproposal/all')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .then(res => {
-        expect(res.statusCode).toBe(200)
-        expect(res.body.ok).toBeBoolean()
-        expect(res.body.hashs).toBeArray()
-        done()
-      })
+      .then((res) => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body.ok).toBeBoolean();
+        expect(res.body.hashs).toBeArray();
+        done();
+      });
   });
 
-  it('create proposalHidden ', async done => {
-    //be careful delete after create
-    let payload = {
-      hash: 'hashProposalTest'
-    }
+  it('create proposalHidden ', async (done) => {
+    // be careful delete after create
+    const payload = {
+      hash: 'hashProposalTest',
+    };
     await request
-      .post(`/proposal/hiddenproposal/`)
+      .post('/proposal/hiddenproposal/')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
       .send(payload)
-      .then(res => {
-        expect(res.statusCode).toBe(200)
-        expect(res.body.ok).toBeBoolean()
-        expect(res.body.message).toEqual('hash created')
-        done()
-      })
+      .then((res) => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body.ok).toBeBoolean();
+        expect(res.body.message).toEqual('hash created');
+        done();
+      });
   }, 30000);
 
-  it('deleteProposalHidden ', async done => {
+  it('deleteProposalHidden ', async (done) => {
     await request
       .delete(`/proposal/hiddenproposal/${proposalHiddenUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .then(res => {
-        expect(res.statusCode).toBe(200)
-        expect(res.body.ok).toBeBoolean()
-        expect(res.body.message).toEqual('hash removed')
-        done()
-      })
+      .then((res) => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body.ok).toBeBoolean();
+        expect(res.body.message).toEqual('hash removed');
+        done();
+      });
   }, 30000);
-})
+});
