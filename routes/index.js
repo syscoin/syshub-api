@@ -2,8 +2,9 @@ const express = require('express');
 const auth = require('./auth');
 const user = require('./user');
 const admin = require('./admin');
-const masterNode = require('./address');
+const address = require('./address');
 const proposal = require('./proposal');
+const statsInfo = require('./statsAndInfo');
 
 const app = express();
 const clientApp = require('../middlewares/verifyClientApp');
@@ -30,9 +31,13 @@ app.use('/proposal',
   [clientApp],
   proposal);
 
-app.use('/masternode',
+app.use('/address',
   [clientApp],
-  masterNode);
+  address);
+
+app.use('/statsInfo',
+  [clientApp],
+  statsInfo);
 
 app.get('*', (req, res) => res.status(404).json({ ok: false, message: 'Not Found' }));
 
