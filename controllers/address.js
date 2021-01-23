@@ -22,24 +22,27 @@ const { encryptAes, decryptAes } = require('../utils/encrypt');
 const getAllVotingAddressByUser = async (req, res, next) => {
   try {
     const { hash } = req.query;
-    const nodes = [];
+    const addresses = [];
     const votesResponse = {};
     const votesArr = [];
     const rdata = {};
 
-    const user = await admin.firestore()
+    const { _fieldsProto: user, id, _fieldsProto: { addressesList } } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
-      .get();
+      .get()
+      .catch((err) => {
+        throw err;
+      });
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof user === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
       });
     }
-    if (user.id !== req.user) {
+
+    if (id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
@@ -54,69 +57,47 @@ const getAllVotingAddressByUser = async (req, res, next) => {
           throw err;
         });
 
-      // eslint-disable-next-line no-restricted-syntax
-      for (const key in votesData) {
-        // eslint-disable-next-line no-prototype-builtins
-        if (votesData.hasOwnProperty(key)) {
-          const data = {
-            txId: null,
-            timestamp: null,
-            vote: null,
-            funding: null,
-          };
-
-          // eslint-disable-next-line array-callback-return
-          Object.keys(data).map((k, i) => {
-            data[k] = votesData[key].split(':')[i];
-          });
-
-          votesArr.push(votesResponse[key] = data);
-        }
-      }
+      Object.keys(votesData).forEach((key) => {
+        const data = {
+          txId: null,
+          timestamp: null,
+          vote: null,
+          funding: null,
+        };
+        Object.keys(data).map((k, i) => {
+          data[k] = votesData[key].split(':')[i];
+        });
+        votesArr.push(votesResponse[key] = data);
+      });
     }
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.mNodeList) {
-      // eslint-disable-next-line no-underscore-dangle
-      await Promise.all(user._fieldsProto.mNodeList.arrayValue.values.map(async (node) => {
-        // eslint-disable-next-line max-len
-        const n = await admin.firestore().collection(process.env.COLLECTION_NAME_ADDRESS).doc(node.stringValue).get();
+    if (addressesList) {
+      const { arrayValue: { values } } = addressesList;
+      await Promise.all(values.map(async ({ stringValue }) => {
+        const { _fieldsProto: addrValue } = await admin.firestore()
+          .collection(process.env.COLLECTION_NAME_ADDRESS)
+          .doc(stringValue)
+          .get()
+          .catch((err) => {
+            throw err;
+          });
         const data = {};
-        data.uid = node.stringValue;
-        // eslint-disable-next-line no-restricted-syntax,no-underscore-dangle
-        for (const key in n._fieldsProto) {
-          // eslint-disable-next-line no-prototype-builtins,no-underscore-dangle
-          if (n._fieldsProto.hasOwnProperty(key)) {
-            //   if (key === 'proposalVotes') {
-            //     const hashVotes = [];
-            //     n._fieldsProto[key].arrayValue.values.map((hash) => {
-            //       const responseHash = {};
-            //       for (const key in hash.mapValue.fields) {
-            //         responseHash[key] = decryptAes(hash.mapValue.fields[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
-            //       }
-            //       hashVotes.push(responseHash);
-            //     });
-            //     data[key] = hashVotes;
-            //
-            //   } else
-            // eslint-disable-next-line no-underscore-dangle
-            if (!n._fieldsProto[key].timestampValue) {
-              // eslint-disable-next-line no-underscore-dangle
-              data[key] = decryptAes(n._fieldsProto[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
-            } else {
-              // eslint-disable-next-line no-underscore-dangle
-              data[key] = Number(n._fieldsProto[key].timestampValue.seconds);
-            }
+        data.uid = stringValue;
+        Object.keys(addrValue).forEach((key) => {
+          if (!addrValue[key].timestampValue) {
+            data[key] = decryptAes(addrValue[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
+          } else {
+            data[key] = Number(addrValue[key].timestampValue.seconds);
           }
-        }
-        nodes.push(data);
+        });
+        addresses.push(data);
       })).catch((err) => {
         throw err;
       });
 
       if (hash !== 'undefined') {
         const votesFiltered = votesArr
-          .filter((v) => nodes.find((e) => e.txId === v.txId))
+          .filter((v) => addresses.find((e) => e.txId === v.txId))
           .reduce((acc, item) => {
             if (!acc[item.txId]) {
               acc[item.txId] = [];
@@ -125,36 +106,31 @@ const getAllVotingAddressByUser = async (req, res, next) => {
             return acc;
           }, {});
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const votesFilteredKey in votesFiltered) {
-          // eslint-disable-next-line no-prototype-builtins
-          if (votesFiltered.hasOwnProperty(votesFilteredKey)) {
-            rdata[votesFilteredKey] = votesFiltered[votesFilteredKey].find((el) => Math.max(Number(el.timestamp)));
-          }
-        }
-        // eslint-disable-next-line array-callback-return
-        nodes.map((e) => {
-          // eslint-disable-next-line guard-for-in,no-restricted-syntax
-          for (const y in rdata) {
-            rdata[y].hash = hash;
-            if (e.txId === y) {
-              if (rdata[y].vote === 'yes') {
-                rdata[y].vote = '1';
-              } else if (rdata[y].vote === 'no') {
-                rdata[y].vote = '2';
+        Object.keys(votesFiltered).forEach((key) => {
+          rdata[key] = votesFiltered[key].find((el) => Math.max(Number(el.timestamp)));
+        });
+
+        addresses.forEach((e) => {
+          Object.keys(rdata).forEach((v) => {
+            rdata[v].hash = hash;
+            if (e.txId === v) {
+              if (rdata[v].vote === 'yes') {
+                rdata[v].vote = '1';
+              } else if (rdata[v].vote === 'no') {
+                rdata[v].vote = '2';
               } else if (rdata[y].vote === 'abstain') {
-                rdata[y].vote = '3';
+                rdata[v].vote = '3';
               }
-              e.proposalVotes = [{ ...rdata[y] }];
+              e.proposalVotes = [{ ...rdata[v] }];
             }
-          }
-          return e;
+            return e;
+          });
         });
       }
 
-      nodes.sort((x, y) => x.date - y.date);
+      addresses.sort((x, y) => x.date - y.date);
 
-      return res.status(200).json({ ok: true, nodes: nodes.reverse() });
+      return res.status(200).json({ ok: true, nodes: addresses.reverse() });
     }
     return res.status(204).json({ ok: false, message: 'There are no associated Voting Address' });
   } catch (err) {
