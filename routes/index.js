@@ -5,6 +5,7 @@ const admin = require('./admin');
 const address = require('./address');
 const proposal = require('./proposal');
 const statsInfo = require('./statsAndInfo');
+const faq = require('./faq');
 
 const app = express();
 const clientApp = require('../middlewares/verifyClientApp');
@@ -38,6 +39,10 @@ app.use('/address',
 app.use('/statsInfo',
   [clientApp],
   statsInfo);
+
+app.use('/faq',
+  [clientApp],
+  faq);
 
 app.get('*', (req, res) => res.status(404).json({ ok: false, message: 'Not Found' }));
 
