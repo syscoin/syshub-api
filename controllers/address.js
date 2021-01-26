@@ -1,7 +1,7 @@
+const crypto = require('crypto');
 const { checkBodyEmpty, checkDataMN } = require('../utils/helpers');
 const { clientRPC, admin } = require('../utils/config');
 const { encryptAes, decryptAes } = require('../utils/encrypt');
-
 /**
  * @function
  * @name getAllMasterNodesByUser
@@ -64,9 +64,11 @@ const getAllVotingAddressByUser = async (req, res, next) => {
           vote: null,
           funding: null,
         };
-        Object.keys(data).map((k, i) => {
+
+        Object.keys(data).forEach((k, i) => {
           data[k] = votesData[key].split(':')[i];
         });
+
         votesArr.push(votesResponse[key] = data);
       });
     }
@@ -87,7 +89,7 @@ const getAllVotingAddressByUser = async (req, res, next) => {
           if (!addrValue[key].timestampValue) {
             data[key] = decryptAes(addrValue[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
           } else {
-            data[key] = Number(addrValue[key].timestampValue.seconds);
+            data[key] = Number(addrValue[key].timestampValue.nanos);
           }
         });
         addresses.push(data);
@@ -162,7 +164,7 @@ const getVotingAddress = async (req, res, next) => {
     let existMasterNodeInUser;
     const decryptData = {};
 
-    const user = await admin.firestore()
+    const { _fieldsProto: user, _fieldsProto: { addressesList } } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
@@ -170,34 +172,25 @@ const getVotingAddress = async (req, res, next) => {
         throw err;
       });
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof user === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
       });
     }
-    if (user.id !== req.user) {
-      return res.status(406).json({
-        ok: false,
-        message: 'you do not have permissions to perform this action',
-      });
-    }
-    // eslint-disable-next-line no-underscore-dangle,max-len
-    if (typeof user._fieldsProto.mNodeList !== 'undefined' && user._fieldsProto.mNodeList.arrayValue.values.length > 0) {
-      // eslint-disable-next-line no-underscore-dangle
-      if (typeof user._fieldsProto.mNodeList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
+
+    if (typeof addressesList !== 'undefined' && addressesList.arrayValue.values.length > 0) {
+      if (typeof addressesList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
         return res.status(406).json({
           ok: false,
           message: 'you do not have permissions to perform this action',
         });
       }
 
-      // eslint-disable-next-line no-underscore-dangle,max-len
-      existMasterNodeInUser = user._fieldsProto.mNodeList.arrayValue.values.find((element) => element.stringValue === id);
+      existMasterNodeInUser = addressesList.arrayValue.values.find((element) => element.stringValue === id);
 
       if (typeof existMasterNodeInUser !== 'undefined') {
-        const { _fieldsProto } = await admin.firestore()
+        const { _fieldsProto: fieldsProto } = await admin.firestore()
           .collection(process.env.COLLECTION_NAME_ADDRESS)
           .doc(id)
           .get()
@@ -205,19 +198,15 @@ const getVotingAddress = async (req, res, next) => {
             throw err;
           });
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const key in _fieldsProto) {
-          // eslint-disable-next-line no-prototype-builtins
-          if (_fieldsProto.hasOwnProperty(key)) {
-            if (key !== 'date') {
-              decryptData[key] = decryptAes(_fieldsProto[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
-            } else if (key === 'date') {
-              decryptData[key] = Number(_fieldsProto[key].timestampValue.seconds);
-            } else {
-              decryptData[key] = _fieldsProto[key].timestampValue.seconds;
-            }
+        Object.keys(fieldsProto).forEach((key) => {
+          if (key !== 'date') {
+            decryptData[key] = decryptAes(fieldsProto[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
+          } else if (key === 'date') {
+            decryptData[key] = Number(fieldsProto[key].timestampValue.seconds);
+          } else {
+            decryptData[key] = fieldsProto[key].timestampValue.seconds;
           }
-        }
+        });
 
         return res.status(200).json({ ok: true, ndNode: decryptData });
       }
@@ -264,9 +253,11 @@ const createVotingAddress = async (req, res, next) => {
       listMN,
     } = req.body;
 
+    const re = /['"]+/g;
+    let serializedArray = [];
     const addresses = [];
     const addressesInvalid = [];
-
+    const aggregateAddresses = [];
     const { _fieldsProto: user, _fieldsProto: { addressesList } } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
@@ -296,70 +287,116 @@ const createVotingAddress = async (req, res, next) => {
           message: 'Required fields',
         });
       }
+    }
 
-      const newAddress = {
-        name: `${name}`.trim(),
-        address: `${address}`.trim(),
-        privateKey: `${privateKey}`.trim(),
-        txId: `${txId}`.trim(),
-      };
-
-      if (checkDataMN(newAddress) !== true) {
-        return res.status(406).json({ ok: false, message: 'invalid data, please check your data.' });
-      }
-
-      Object.keys(newAddress).forEach((key) => {
-        newAddress[key] = encryptAes(newAddress[key], process.env.KEY_FOR_ENCRYPTION);
-      });
-
-      newAddress.date = admin.firestore.Timestamp.now();
-
-      const { _path: { id } } = await admin.firestore()
+    const resp = await Promise.all(addresses.map(async (addr) => {
+      const { _fieldsProto: { name, address: addrUser } } = await admin.firestore()
         .collection(process.env.COLLECTION_NAME_ADDRESS)
-        .add(newAddress)
+        .doc(addr)
+        .get()
         .catch((err) => {
           throw err;
         });
+      return {
+        name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
+        address: decryptAes(addrUser.stringValue, process.env.KEY_FOR_ENCRYPTION),
+      };
+    }));
 
-      addresses.push(id);
+    if (!listMN) {
+      const newAddress = {
+        name: `${name.replace(re, '')}`.trim(),
+        address: `${address.replace(re, '')}`.trim(),
+        privateKey: `${privateKey.replace(re, '')}`.trim(),
+        txId: `${txId.replace(re, '')}`.trim(),
+      };
+      const isExist = resp.find((e) => e.address === newAddress.address);
+      const verifyName = resp.find((e) => e.name === newAddress.name);
+      if (typeof verifyName !== 'undefined') {
+        newAddress.name = `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
+      }
+
+      if (typeof isExist === 'undefined') {
+        aggregateAddresses.push(newAddress);
+      }
     } else {
-      await Promise.all(JSON.parse(listMN).map(async (data) => {
+      if (Array.isArray(JSON.parse(listMN)) === false) {
+        return res.status(406).json({ ok: false, message: 'invalid format' });
+      }
+      serializedArray = [...new Set(JSON.parse(listMN).map(JSON.stringify))].map(JSON.parse);
+
+      serializedArray.forEach((e) => {
         const {
-          label, votingAddress, votingKey, collateralHash, collateralIndex,
-        } = data;
+          label,
+          votingAddress,
+          votingKey,
+          collateralHash,
+          collateralIndex,
+        } = e;
+
         const newVotingAddress = {
           name: `${label}`.trim(),
           address: `${votingAddress}`.trim(),
           privateKey: `${votingKey}`.trim(),
           txId: `${collateralHash}-${collateralIndex}`.trim(),
         };
-        if (checkDataMN(newVotingAddress) === true) {
-          Object.keys(newVotingAddress).forEach((key) => {
-            newVotingAddress[key] = encryptAes(newVotingAddress[key], process.env.KEY_FOR_ENCRYPTION);
-          });
-          newVotingAddress.date = admin.firestore.Timestamp.now();
-          const { _path: { id } } = await admin.firestore()
-            .collection(process.env.COLLECTION_NAME_ADDRESS)
-            .add(newVotingAddress)
-            .catch((err) => {
-              throw err;
-            });
-          addresses.push(id);
-        } else {
-          addressesInvalid.push(newVotingAddress);
+
+        const isExist = resp.find((e) => e.address === newVotingAddress.address);
+        const verifyName = resp.find((e) => e.name === newVotingAddress.name);
+
+        if (typeof verifyName !== 'undefined') {
+          newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
         }
-      })).catch((err) => {
-        throw err;
+
+        if (aggregateAddresses.length > 0) {
+          const verifyNameInAddresses = aggregateAddresses.find((e) => e.name === newVotingAddress.name);
+          if (typeof verifyNameInAddresses !== 'undefined') {
+            newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
+          }
+        }
+
+        if (typeof isExist === 'undefined') {
+          aggregateAddresses.push(newVotingAddress);
+        }
       });
     }
 
+    if (aggregateAddresses.length === 0) {
+      return res.status(200).json({ ok: true, message: 'there are no new voting addresses to add' });
+    }
+
+    await Promise.all(aggregateAddresses.map(async (data) => {
+      if (checkDataMN(data) === true) {
+        Object.keys(data).forEach((key) => {
+          data[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
+        });
+        data.date = admin.firestore.Timestamp.now();
+        const { _path: { id } } = await admin.firestore()
+          .collection(process.env.COLLECTION_NAME_ADDRESS)
+          .add(data)
+          .catch((err) => {
+            throw err;
+          });
+        addresses.push(id);
+      } else {
+        addressesInvalid.push(data);
+      }
+    })).catch((err) => {
+      throw err;
+    });
     await admin.firestore()
       .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
-      .update('addressesList', addresses).catch((err) => {
+      .update('addressesList', addresses)
+      .catch((err) => {
         throw err;
       });
+
     return res.status(200).json({ ok: true, messages: 'data saved successfully', addressesInvalid });
   } catch (err) {
+    if (err.message === 'Unexpected end of JSON input') {
+      return res.status(406).json({ ok: false, message: 'invalid format' });
+    }
+    console.log(err);
     next(err);
   }
 };
@@ -385,17 +422,24 @@ const updateVotingAddress = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { data } = req.body;
+    console.log(data);
     const dataEncrypt = {};
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
+    const { _fieldsProto: fieldsProto } = await admin.firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+      .catch((err) => {
+        throw err;
+      });
     // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
       });
     }
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto.mNodeList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
+
+    if (typeof fieldsProto.addressesList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
@@ -403,11 +447,12 @@ const updateVotingAddress = async (req, res, next) => {
     }
     // if (user.id !== req.user) return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
     if (!data) return res.status(406).json({ ok: false, message: 'Required fields' });
-    if (!checkMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' });
-    // eslint-disable-next-line guard-for-in,no-restricted-syntax
-    for (const key in data) {
+    if (!checkDataMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' });
+
+    Object.keys(data).forEach((key) => {
       dataEncrypt[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
-    }
+    });
+
     await admin.firestore()
       .doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`)
       .update(dataEncrypt)
@@ -439,44 +484,48 @@ const updateVotingAddress = async (req, res, next) => {
 const destroyVotingAddress = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const nodes = [];
+    const addresses = [];
     let existMasterNodeInUser;
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
+    const { _fieldsProto: fieldsProto, id: uid } = await admin.firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+      .catch((err) => {
+        throw err;
+      });
     // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
       });
     }
-    if (user.id !== req.user) {
+    if (uid !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
       });
     }
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.mNodeList.arrayValue.values.length > 0) {
-      // eslint-disable-next-line no-underscore-dangle,max-len
-      existMasterNodeInUser = user._fieldsProto.mNodeList.arrayValue.values.find((element) => element.stringValue === id);
+    if (fieldsProto.addressesList.arrayValue.values.length > 0) {
+      existMasterNodeInUser = fieldsProto.addressesList.arrayValue.values.find((element) => element.stringValue === id);
       if (typeof existMasterNodeInUser !== 'undefined') {
-        // eslint-disable-next-line no-underscore-dangle,array-callback-return
-        user._fieldsProto.mNodeList.arrayValue.values.map((node) => {
-          nodes.push(node.stringValue);
+        fieldsProto.addressesList.arrayValue.values.map((node) => {
+          addresses.push(node.stringValue);
         });
-        const index = nodes.findIndex((element) => element === existMasterNodeInUser.stringValue);
-        nodes.splice(index, 1);
-        // eslint-disable-next-line max-len
-        await admin.firestore().doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`).update('mNodeList', nodes).catch((err) => {
-          throw err;
-        });
-        await admin.firestore().doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`).delete().catch((err) => {
-          throw err;
-        });
-        // eslint-disable-next-line no-shadow,max-len
-        const info = await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).get();
-        // eslint-disable-next-line no-underscore-dangle,max-len
-        await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).update({ nMnodes: Number(info._fieldsProto.nMnodes.integerValue) - 1 });
+        const index = addresses.findIndex((element) => element === existMasterNodeInUser.stringValue);
+        addresses.splice(index, 1);
+        await admin.firestore()
+          .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
+          .update('addressesList', addresses)
+          .catch((err) => {
+            throw err;
+          });
+        await admin.firestore()
+          .doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`)
+          .delete()
+          .catch((err) => {
+            throw err;
+          });
         return res.status(200).json({ ok: true, message: 'Voting Address Deleted' });
       }
       return res.status(204).json({ ok: true, message: 'Voting Address Deleted' });
