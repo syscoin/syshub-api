@@ -68,7 +68,7 @@ const getALlQuestions = async (req, res, next) => {
     }
 
     const { _docs: docs } = await admin.firestore()
-      .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
+      .collection(process.env.COLLECTION_NAME_FAQ)
       .get()
       .catch((err) => { throw err; });
 
@@ -100,7 +100,6 @@ const getALlQuestions = async (req, res, next) => {
       faqs,
     });
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };
