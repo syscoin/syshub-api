@@ -894,6 +894,20 @@ const stats = async (req, res, next) => {
   }
 };
 
+const usersApp = async (req, res, next) => {
+  try {
+    const users = await admin.firestore()
+      .collection(process.env.COLLECTION_NAME_INFO)
+      .get()
+      .catch((err) => {
+        throw err;
+      });
+
+    return res.status(200).json({ ok: true, users: Number(users._docs()[0]._fieldsProto.nUsers.integerValue) });
+  } catch (err) {
+    next(err);
+  }
+};
 module.exports = {
   masterNodes,
   stats,
@@ -903,4 +917,5 @@ module.exports = {
   getMiningInfo,
   getGovernanceInfo,
   getSuperBlockBudget,
+  usersApp,
 };

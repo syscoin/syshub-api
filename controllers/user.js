@@ -413,9 +413,9 @@ const deleteUser = async (req, res, next) => {
     // eslint-disable-next-line no-underscore-dangle
     if (user._fieldsProto) {
       // eslint-disable-next-line no-underscore-dangle
-      if (user._fieldsProto.mNodeList) {
+      if (user._fieldsProto.addressesList) {
         // eslint-disable-next-line no-underscore-dangle,array-callback-return
-        user._fieldsProto.mNodeList.arrayValue.values.map((mn) => {
+        user._fieldsProto.addressesList.arrayValue.values.map((mn) => {
           mnUser.push(mn.stringValue);
         });
         if (mnUser.length > 0) {

@@ -47,8 +47,8 @@ const getALlQuestions = async (req, res, next) => {
         // .orderBy('title')
         // .startAt([title])
         // .endAt([`${title}\uf8ff`])
-        .where('title', '>=', title)
-        .where('title', '<=', `${title}\uf8ff`)
+        // .where('title', '>=', title)
+        // .where('title', '<=', `${title}\uf8ff`)
         .offset((page - 1) * pageSize)
         .limit(pageSize)
         .get()
@@ -58,7 +58,7 @@ const getALlQuestions = async (req, res, next) => {
     } else {
       documents = await admin.firestore()
         .collection(process.env.COLLECTION_NAME_FAQ)
-        .orderBy('title', 'desc')
+        .orderBy('created_at', 'desc')
         .offset((page - 1) * pageSize)
         .limit(pageSize)
         .get()
@@ -87,7 +87,6 @@ const getALlQuestions = async (req, res, next) => {
       faqs.push(newData);
     });
 
-    faqs.sort((a, b) => a.created_at - b.created_at).reverse();
     return res.status(200).json({
       ok: true,
       pageSize,

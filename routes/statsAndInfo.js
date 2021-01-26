@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  masterNodes, stats, countMasterNodes, list, info, getMiningInfo, getGovernanceInfo, getSuperBlockBudget,
+  masterNodes, stats, countMasterNodes, list, info, getMiningInfo, getGovernanceInfo, getSuperBlockBudget, usersApp,
 } = require('../controllers/statsAndInfo');
 
 const router = express.Router();
@@ -13,5 +13,6 @@ router.get('/getmininginfo', getMiningInfo);
 router.get('/getgovernanceinfo', getGovernanceInfo);
 router.get('/getsuperblockbudget', getSuperBlockBudget);
 router.get('/mnStats', stats);
+router.get('/users', usersApp);
 
 module.exports = router;
