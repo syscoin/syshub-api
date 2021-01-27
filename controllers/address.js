@@ -362,7 +362,7 @@ const createVotingAddress = async (req, res, next) => {
     }
 
     if (aggregateAddresses.length === 0) {
-      return res.status(200).json({ ok: true, message: 'there are no new voting addresses to add' });
+      return res.status(200).json({ ok: true, message: 'There are no new voting addresses to add' });
     }
 
     await Promise.all(aggregateAddresses.map(async (data) => {
@@ -391,12 +391,11 @@ const createVotingAddress = async (req, res, next) => {
         throw err;
       });
 
-    return res.status(200).json({ ok: true, messages: 'data saved successfully', addressesInvalid });
+    return res.status(200).json({ ok: true, message: 'Data saved successfully', addressesInvalid });
   } catch (err) {
     if (err.message === 'Unexpected end of JSON input') {
-      return res.status(406).json({ ok: false, message: 'invalid format' });
+      return res.status(406).json({ ok: false, message: 'Invalid format, Please verify the data and try again' });
     }
-    console.log(err);
     next(err);
   }
 };
