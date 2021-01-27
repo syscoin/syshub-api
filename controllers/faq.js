@@ -5,6 +5,7 @@ const getCurrentQuestions = async (req, res, next) => {
     const faqs = [];
     const { docs } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_FAQ)
+      .orderBy('created_at', 'desc')
       .get()
       .catch((err) => {
         throw err;
@@ -16,17 +17,18 @@ const getCurrentQuestions = async (req, res, next) => {
           title,
           description,
           created_at,
-          updated_at,
+          // updated_at,
         },
       } = data;
       faqs.push({
+        uid: data.id,
         title: title.stringValue,
         description: description.stringValue,
         created_at: Number(created_at.timestampValue.seconds),
-        updated_at: updated_at ? updated_at.timestampValue.nanos : null,
+        // updated_at: updated_at ? updated_at.timestampValue.nanos : null,
       });
     });
-    faqs.sort((x, y) => x.created_at - y.created_at);
+    // faqs.sort((x, y) => x.created_at - y.created_at);
     return res.status(200).json({ ok: true, faqs: faqs.reverse() });
   } catch (err) {
     next(err);
@@ -58,7 +60,7 @@ const getALlQuestions = async (req, res, next) => {
     } else {
       documents = await admin.firestore()
         .collection(process.env.COLLECTION_NAME_FAQ)
-        .orderBy('created_at', 'desc')
+        .orderBy('created_at', 'asc')
         .offset((page - 1) * pageSize)
         .limit(pageSize)
         .get()
