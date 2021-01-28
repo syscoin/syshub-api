@@ -452,19 +452,24 @@ const vote = async (req, res, next) => {
   } catch (err) {
     if (err.message.split(':')[1].trim() === 'Failure to find masternode in list') {
       return res.status(400).json({ ok: false, message: 'Failure to find masterNode in list' });
-    } if (err.message.split(':')[2].trim() === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR') {
+    }
+    if (err.message.split(':')[2].trim() === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR') {
       return res.status(400).json({
         ok: false,
         // eslint-disable-next-line max-len
         message: 'To vote on this proposal you must wait an hour then you can vote again, if you want to vote on another proposal where you have not voted, you can.',
       });
-    } if (err.message.split(':')[1].trim() === 'Error voting') {
+    }
+    if (err.message.split(':')[1].trim() === 'Error voting') {
       return res.status(400).json({ ok: false, message: 'Invalid proposal hash. Please check' });
-    } if (err.message.split(':')[1].trim() === 'mn tx hash must be hexadecimal string') {
+    }
+    if (err.message.split(':')[1].trim() === 'mn tx hash must be hexadecimal string') {
       return res.status(400).json({ ok: false, message: 'Invalid txId. Please check' });
-    } if (err.message.split(':')[1].trim() === 'Failure to verify vote.') {
+    }
+    if (err.message.split(':')[1].trim() === 'Failure to verify vote.') {
       return res.status(400).json({ ok: false, message: 'The vote cannot be verified' });
-    } if (err.message.split(':')[1].trim().split('64')[0].trim() === 'mn tx hash must be of length') {
+    }
+    if (err.message.split(':')[1].trim().split('64')[0].trim() === 'mn tx hash must be of length') {
       return res.status(400).json({ ok: false, message: 'Invalid txId. Please check' });
     }
     next(err);
@@ -662,7 +667,7 @@ const getAllHiddenProposal = async (req, res, next) => {
     } else {
       documents = await admin.firestore()
         .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
-        .orderBy('hash', 'desc')
+        .orderBy('created_at', 'desc')
         .offset((page - 1) * pageSize)
         .limit(pageSize)
         .get()
@@ -719,6 +724,20 @@ const getAllHiddenProposal = async (req, res, next) => {
       }
     });
 
+    proposalHash.map(async (e) => {
+      const exist = Object.keys(gobjectData).find((elem) => elem === e.hash);
+      if (typeof exist === 'undefined') {
+        const i = proposalHash.indexOf(e);
+        proposalHash.splice(i, 1);
+        await admin.firestore()
+          .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
+          .doc(e.uid)
+          .delete()
+          .catch((err) => {
+            throw err;
+          });
+      }
+    });
     proposalHash.sort((a, b) => a.createTime - b.createTime).reverse();
     return res.status(200).json({
       ok: true,
@@ -766,9 +785,24 @@ const createHiddenProposal = async (req, res, next) => {
       });
     if (isHidden.size > 0) return res.status(200).json({ ok: false, message: 'Proposal already hidden' });
 
+    const gobjectData = await clientRPC
+      .callRpc('gobject_list')
+      .call()
+      .catch((err) => {
+        throw err;
+      });
+
+    const existingHash = Object.keys(gobjectData).find((e) => e === hash);
+
+    if (typeof existingHash === 'undefined') {
+      return res.status(406).json({ ok: false, message: 'the proposal does not exist in the governance list' });
+    }
     await admin.firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
-      .add({ hash })
+      .add({
+        hash,
+        created_at: admin.firestore.Timestamp.now(),
+      })
       .catch((err) => {
         throw err;
       });
