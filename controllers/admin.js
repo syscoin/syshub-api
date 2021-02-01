@@ -1,5 +1,18 @@
 const { admin } = require('../utils/config');
 
+/**
+ * @function
+ * @name getAllAdmins
+ * @desc get all user
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
 const getAllAdmins = async (req, res, next) => {
   try {
     const userAdmin = await admin.firestore()
@@ -32,6 +45,23 @@ const getAllAdmins = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name createAdmin
+ * @desc create new user with admin role
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.body.name identifying name for the database
+ * @param {string} req.body.email user email
+ * @param {string} req.body.pwd user password
+ * @param {string} req.body.uid If the user is already registered in the application with passing the uid, their role can be updated
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
 // eslint-disable-next-line consistent-return
 const createAdmin = async (req, res, next) => {
   try {
@@ -121,6 +151,7 @@ const createAdmin = async (req, res, next) => {
   }
 };
 
+// do not use for the moment
 const updateAdmin = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -139,6 +170,20 @@ const updateAdmin = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name deleteAdmin
+ * @desc remove administrator role
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.params.id user identifier
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
 // eslint-disable-next-line consistent-return
 const deleteAdmin = async (req, res, next) => {
   try {

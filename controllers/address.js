@@ -12,6 +12,7 @@ const { encryptAes, decryptAes } = require('../utils/encrypt');
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
+ * @param {string} req.query.hash hash of the vote search proposal
  * @param {function} next errors caught and sent
  *
  * @return {object} positive answer
@@ -120,7 +121,7 @@ const getAllVotingAddressByUser = async (req, res, next) => {
                 rdata[v].vote = '1';
               } else if (rdata[v].vote === 'no') {
                 rdata[v].vote = '2';
-              } else if (rdata[y].vote === 'abstain') {
+              } else if (rdata[v].vote === 'abstain') {
                 rdata[v].vote = '3';
               }
               e.proposalVotes = [{ ...rdata[v] }];
@@ -142,8 +143,8 @@ const getAllVotingAddressByUser = async (req, res, next) => {
 
 /**
  * @function
- * @name getMasterNode
- * @desc get data from a masterNode
+ * @name getVotingAddress
+ * @desc get data from a voting address
  * @async
  * @method
  *
@@ -220,8 +221,8 @@ const getVotingAddress = async (req, res, next) => {
 
 /**
  * @function
- * @name createMasterNode
- * @desc create a new masterNode
+ * @name createVotingAddress
+ * @desc create a new voting address
  * @async
  * @method
  *
@@ -231,8 +232,8 @@ const getVotingAddress = async (req, res, next) => {
  * @param {object} req.body.name name or ip
  * @param {object} req.body.address
  * @param {object} req.body.privateKey
- * @param {object} req.body.txId Fee transaction ID
- * @param {object} req.body.listMN masterNode list from masternode.conf - Not available in version 4.2
+ * @param {object} req.body.txId collateralHash and collateralIndex
+ * @param {object} req.body.listMN masterNode list from masternode.conf - Not available in version 4.2, use protx_list_wallet 1 in console the Syscoin-qt
  * @param {function} next errors caught and sent
  *
  * @return {object} positive answer
@@ -290,6 +291,7 @@ const createVotingAddress = async (req, res, next) => {
     }
 
     const resp = await Promise.all(addresses.map(async (addr) => {
+      // eslint-disable-next-line no-shadow
       const { _fieldsProto: { name, address: addrUser } } = await admin.firestore()
         .collection(process.env.COLLECTION_NAME_ADDRESS)
         .doc(addr)
@@ -341,8 +343,8 @@ const createVotingAddress = async (req, res, next) => {
           txId: `${collateralHash}-${collateralIndex}`.trim(),
         };
 
-        const isExist = resp.find((e) => e.address === newVotingAddress.address);
-        const verifyName = resp.find((e) => e.name === newVotingAddress.name);
+        const isExist = resp.find((el) => el.address === newVotingAddress.address);
+        const verifyName = resp.find((el) => el.name === newVotingAddress.name);
 
         if (typeof verifyName !== 'undefined') {
           newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
@@ -368,8 +370,10 @@ const createVotingAddress = async (req, res, next) => {
     await Promise.all(aggregateAddresses.map(async (data) => {
       if (checkDataMN(data) === true) {
         Object.keys(data).forEach((key) => {
+          // eslint-disable-next-line no-param-reassign
           data[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
         });
+        // eslint-disable-next-line no-param-reassign
         data.date = admin.firestore.Timestamp.now();
         const { _path: { id } } = await admin.firestore()
           .collection(process.env.COLLECTION_NAME_ADDRESS)
@@ -402,14 +406,14 @@ const createVotingAddress = async (req, res, next) => {
 
 /**
  * @function
- * @name updateMaterNode
+ * @name updateVotingAddress
  * @desc update data from a masterNode - Voting Address
  * @async
  * @method
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {string} req.params.id uid of the masterNode saved in the firebase collection
+ * @param {string} req.params.id uid of the voting address saved in the firebase collection
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
  * @param {object} req.body.data data obtained from the front for update
  * @param {function} next errors caught and sent
@@ -421,7 +425,6 @@ const updateVotingAddress = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { data } = req.body;
-    console.log(data);
     const dataEncrypt = {};
     const { _fieldsProto: fieldsProto } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
@@ -466,14 +469,14 @@ const updateVotingAddress = async (req, res, next) => {
 
 /**
  * @function
- * @name destroyMasterNode
+ * @name destroyVotingAddress
  * @desc remove a address from db
  * @async
  * @method
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {string} req.params.id is an opaque identifier for a user account.
+ * @param {string} req.params.id uid of the voting address saved in the firebase collection
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
  * @param {function} next errors caught and sent
  *
@@ -508,6 +511,7 @@ const destroyVotingAddress = async (req, res, next) => {
     if (fieldsProto.addressesList.arrayValue.values.length > 0) {
       existMasterNodeInUser = fieldsProto.addressesList.arrayValue.values.find((element) => element.stringValue === id);
       if (typeof existMasterNodeInUser !== 'undefined') {
+        // eslint-disable-next-line array-callback-return
         fieldsProto.addressesList.arrayValue.values.map((node) => {
           addresses.push(node.stringValue);
         });

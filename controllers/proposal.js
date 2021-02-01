@@ -641,7 +641,8 @@ const getOneProposal = async (req, res, next) => {
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- *
+ * @param {string} req.query.hash hash of the proposal to run a search
+ * @param {string} req.query.page next page for pagination of documents by page
  * @param {function} next errors caught and sent
  *
  * @return {object} positive answer

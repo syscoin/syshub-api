@@ -1,5 +1,19 @@
 const { admin } = require('../utils/config');
 
+/**
+ * @function
+ * @name getCurrentQuestions
+ * @desc get the FAQs created for the overview display
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
+// eslint-disable-next-line consistent-return
 const getCurrentQuestions = async (req, res, next) => {
   try {
     const faqs = [];
@@ -35,6 +49,22 @@ const getCurrentQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name getALlQuestions
+ * @desc get the FAQ created for admin user display
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.query.title title of the proposal to run a search
+ * @param {string} req.query.page next page for pagination of documents by page
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
+// eslint-disable-next-line consistent-return
 const getALlQuestions = async (req, res, next) => {
   try {
     let documents;
@@ -72,7 +102,9 @@ const getALlQuestions = async (req, res, next) => {
     const { _docs: docs } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_FAQ)
       .get()
-      .catch((err) => { throw err; });
+      .catch((err) => {
+        throw err;
+      });
 
     // eslint-disable-next-line no-underscore-dangle
     const sizePerPage = documents._docs().length;
@@ -105,6 +137,21 @@ const getALlQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name getQuestions
+ * @desc get a new FAQ
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.params.id title of the FAQ to run a search
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
+// eslint-disable-next-line consistent-return
 const getQuestions = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -113,7 +160,9 @@ const getQuestions = async (req, res, next) => {
       .collection(process.env.COLLECTION_NAME_FAQ)
       .doc(id)
       .get()
-      .catch((err) => { throw err; });
+      .catch((err) => {
+        throw err;
+      });
 
     if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({ ok: false, message: 'document not found please try again' });
@@ -133,6 +182,21 @@ const getQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name createQuestions
+ * @desc create a new FAQ
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.body.title FAQ title
+ * @param {string} req.body.description description of the frequently asked question
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
 const createQuestions = async (req, res, next) => {
   try {
     const { title, description } = req.body;
@@ -168,6 +232,22 @@ const createQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name updateQuestions
+ * @desc update a new FAQ
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.params.id id FAQ
+ * @param {string} req.body.data data to update
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
+// eslint-disable-next-line consistent-return
 const updateQuestions = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -181,7 +261,9 @@ const updateQuestions = async (req, res, next) => {
       .collection(process.env.COLLECTION_NAME_FAQ)
       .doc(id)
       .get()
-      .catch((err) => { throw err; });
+      .catch((err) => {
+        throw err;
+      });
 
     if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({ ok: false, message: 'document not found please try again' });
@@ -190,6 +272,7 @@ const updateQuestions = async (req, res, next) => {
     Object.keys(data).forEach((key) => {
       newData[key] = data[key];
 
+      // eslint-disable-next-line max-len
       newData.created_at = admin.firestore.Timestamp.fromDate(new Date(fieldsProto.created_at.timestampValue.seconds * 1000));
       newData.updated_at = admin.firestore.Timestamp.now();
     });
@@ -208,6 +291,21 @@ const updateQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @function
+ * @name deleteQuestions
+ * @desc delete a new FAQ
+ * @async
+ * @method
+ *
+ * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
+ * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
+ * @param {string} req.params.id id FAQ
+ * @param {function} next errors caught and sent
+ *
+ * @return {object} positive answer
+ */
+// eslint-disable-next-line consistent-return
 const deleteQuestions = async (req, res, next) => {
   try {
     const { id } = req.params;

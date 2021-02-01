@@ -10,7 +10,8 @@ const { encryptAes } = require('../utils/encrypt');
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {string} req.params.id is an opaque identifier for a user account.
+ * @param {string} req.query.email email to perform a search.
+ * @param {string} req.query.page next page to perform the paging of the request.
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
  * @param {function} next errors caught and sent
  *
@@ -207,7 +208,13 @@ const getOneUser = async (req, res, next) => {
 const getUser2fa = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(id).get();
+    const user = await admin.firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(id)
+      .get()
+      .catch((err) => {
+        throw err;
+      });
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto !== 'undefined') {
       const userData = {};
