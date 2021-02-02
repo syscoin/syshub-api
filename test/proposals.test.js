@@ -39,7 +39,7 @@ describe('interaction with rpc', () => {
       paymentAmount: 50000,
       url: 'empty',
     };
-    await request
+    request
       .post('/proposal/check')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -69,7 +69,7 @@ describe('interaction with rpc', () => {
       paymentAmount: 50000,
       url: 'empty',
     };
-    await request
+    request
       .post('/proposal/prepare')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -96,7 +96,7 @@ describe('interaction with rpc', () => {
       txId: TxId,
     };
 
-    await request
+    request
       .put(`/proposal/submit/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -122,7 +122,7 @@ describe('interaction with rpc', () => {
       signature: 'Enter signature from the wallet',
     };
 
-    await request
+    request
       .post('/proposal/vote')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -139,7 +139,7 @@ describe('interaction with rpc', () => {
 describe('interaction with firebase', () => {
   it('incomplete proposals from a user ', async (done) => {
     const token = await getToken();
-    await request
+    request
       .get('/proposal/pending/recover')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -154,7 +154,7 @@ describe('interaction with firebase', () => {
 
   it('get the information of a proposal', async (done) => {
     const token = await getToken();
-    await request
+    request
       .get(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -175,7 +175,7 @@ describe('interaction with firebase', () => {
 
   it('update a proposal', async (done) => {
     const token = await getToken();
-    await request
+    request
       .put(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -211,7 +211,7 @@ describe('interaction with firebase', () => {
 
   it('delete a proposal', async (done) => {
     const token = await getToken();
-    await request
+    request
       .delete(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -225,7 +225,7 @@ describe('interaction with firebase', () => {
   }, 30000);
 
   it('get all proposalHidden ', async (done) => {
-    await request
+    request
       .get('/proposal/hiddenproposal/all')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -242,7 +242,7 @@ describe('interaction with firebase', () => {
     const payload = {
       hash: 'hashProposalTest',
     };
-    await request
+    request
       .post('/proposal/hiddenproposal/')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
@@ -256,7 +256,7 @@ describe('interaction with firebase', () => {
   }, 30000);
 
   it('deleteProposalHidden ', async (done) => {
-    await request
+    request
       .delete(`/proposal/hiddenproposal/${proposalHiddenUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')

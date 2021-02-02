@@ -5,9 +5,8 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
-const https = require('https');
-const forceSsl = require('express-force-ssl');
 const routes = require('../routes/index');
+require('../utils/config');
 
 const app = express();
 

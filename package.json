@@ -53,6 +53,7 @@
     "jsdoc": "^3.6.6"
   },
   "jest": {
+    "testEnvironment": "node",
     "setupFilesAfterEnv": [
       "jest-extended"
     ]
