@@ -8,31 +8,32 @@ const cors = require('cors');
 var Bitcoin = require('bitcoinjs-lib');
 var Int64LE = require('int64-buffer').Int64LE;
 const secp256k1 = require('secp256k1');
-const { swapEndiannessInPlace, swapEndianness } = require('buffer-math');
+const {swapEndiannessInPlace, swapEndianness} = require('buffer-math');
 
 router.use(cors());
 
 /* GET home page and checks. */
-router.get('/', function(req, res, next) {
-  res.render('index.hjs', { title: 'Syshub-api' });
-});
+// router.get('/', function (req, res, next) {
+//   res.render('index.hjs', {title: 'Syshub-api'});
+// });
 
-router.get('/createzone', function(req, res, next) {
-  res.render('createzone.hjs', null);
-});
+// router.get('/createzone', function (req, res, next) {
+//   res.render('createzone.hjs', null);
+// });
 
-router.get('/createcomment', function(req, res, next) {
-  res.render('createcomment.hjs', null);
-});
+// router.get('/createcomment', function (req, res, next) {
+//   res.render('createcomment.hjs', null);
+// });
 
-router.get('/check', function(req, res) {
-  res.send({ status: 'true', message: 'API server up and running' });
+router.get('', (req, res) => res.status(200).json({ok: true, message: "Syshub-api"}))
+router.get('/check', function (req, res) {
+  res.send({status: 'true', message: 'API server up and running'});
 });
 
 /* API for Syscoin node */
-router.get('/list', function(req, res) {
+router.get('/list', function (req, res) {
   var exec = gcmd + ' list ';
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -41,11 +42,11 @@ router.get('/list', function(req, res) {
   });
 });
 
-router.post('/cmd', function(req, res) {
+router.post('/cmd', function (req, res) {
   var script = req.body.script;
   var exec = syscoinCli + script;
 
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -54,10 +55,10 @@ router.post('/cmd', function(req, res) {
   });
 });
 
-router.post('/check', function(req, res) {
+router.post('/check', function (req, res) {
   var dataHex = req.body.dataHex;
   var exec = gcmd + ' check ' + dataHex;
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -66,7 +67,7 @@ router.post('/check', function(req, res) {
   });
 });
 
-router.post('/prepare', function(req, res) {
+router.post('/prepare', function (req, res) {
   const parentHash = req.body.parentHash;
   const revision = req.body.revision;
   const time = req.body.time;
@@ -84,7 +85,7 @@ router.post('/prepare', function(req, res) {
   res.send(exec);
 });
 
-router.post('/submit', function(req, res) {
+router.post('/submit', function (req, res) {
   const parentHash = req.body.parentHash;
   const revision = req.body.revision;
   const time = req.body.time;
@@ -105,15 +106,15 @@ router.post('/submit', function(req, res) {
   res.send(exec);
 });
 
-router.get('/curl', function(req, res) {
+router.get('/curl', function (req, res) {
   return exec(`curl ${req.query.url}`)
     .then(response =>
-      res.status(200).json({ err: null, data: response.stdout })
+      res.status(200).json({err: null, data: response.stdout})
     )
-    .catch(err => res.status(204).json({ err }));
+    .catch(err => res.status(204).json({err}));
 });
 
-router.post('/vote', function(req, res) {
+router.post('/vote', function (req, res) {
   const {
     txHash,
     txIndex,
@@ -143,7 +144,7 @@ router.post('/vote', function(req, res) {
 
   var exec = syscoinCli + rpcCommand;
 
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -152,9 +153,9 @@ router.post('/vote', function(req, res) {
   });
 });
 
-router.get('/getinfo', function(req, res) {
+router.get('/getinfo', function (req, res) {
   var exec = syscoinCli + ' getblockchaininfo ';
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -163,9 +164,9 @@ router.get('/getinfo', function(req, res) {
   });
 });
 
-router.get('/getmininginfo', function(req, res) {
+router.get('/getmininginfo', function (req, res) {
   var exec = syscoinCli + ' getmininginfo ';
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -174,9 +175,9 @@ router.get('/getmininginfo', function(req, res) {
   });
 });
 
-router.get('/getgovernanceinfo', function(req, res) {
+router.get('/getgovernanceinfo', function (req, res) {
   var exec = syscoinCli + ' getgovernanceinfo ';
-  shell.exec(exec, function(code, stdout, stderr) {
+  shell.exec(exec, function (code, stdout, stderr) {
     if (!code) {
       res.send(stdout);
     } else {
@@ -186,53 +187,108 @@ router.get('/getgovernanceinfo', function(req, res) {
 });
 
 router.get('/getsuperblockbudget', async (req, res) => {
-  const getGovernanceInfo = syscoinCli + ' getgovernanceinfo ';
-  shell.exec(getGovernanceInfo, async (code, stdout, stderr) => {
-    if (!code) {
-      const governanceInfo = JSON.parse(stdout);
-      const lsb = governanceInfo.lastsuperblock;
-      const nsb = governanceInfo.nextsuperblock;
-      const getLastSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${lsb}`;
-      const getNextSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${nsb}`;
-
-      shell.exec(getLastSuperBlockBudget, (lsbCode, lsbStdout, lsbStderr) => {
-        if (!lsbCode) {
-          shell.exec(
-            getNextSuperBlockBudget,
-            (nsbCode, nsbStdout, nsbStderr) => {
+  try {
+    const getGovernanceInfo = syscoinCli + ' getgovernanceinfo ';
+    let governanceInfo;
+    let lsb;
+    let nsb;
+    let getLastSuperBlockBudget;
+    let getNextSuperBlockBudget;
+    let lsbBudget;
+    let nsbBudget;
+    shell.exec(getGovernanceInfo, async (code, stdout, stderr) => {
+      if (!code) {
+        governanceInfo = JSON.parse(stdout);
+        lsb = governanceInfo.lastsuperblock;
+        nsb = governanceInfo.nextsuperblock;
+        getLastSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${lsb}`;
+        getNextSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${nsb}`;
+        shell.exec(getLastSuperBlockBudget, (lsbCode, lsbStdout, lsbStderr) => {
+          if (!lsbCode) {
+            shell.exec(getNextSuperBlockBudget, (nsbCode, nsbStdout, nsbStderr) => {
               if (!nsbCode) {
-                const lsbBudget = lsbStdout.split('\n')[0];
-                const nsbBudget = nsbStdout.split('\n')[0];
-                console.log(lsbBudget, nsbBudget);
-                res.json([
-                  { block: lsb, budget: lsbBudget },
-                  { block: nsb, budget: nsbBudget }
-                ]);
+                lsbBudget = lsbStdout.split('\n')[0];
+                nsbBudget = nsbStdout.split('\n')[0];
+                res.json([{block: lsb, budget: lsbBudget}, {block: nsb, budget: nsbBudget}]);
               } else {
                 res.send(nsbStderr);
               }
-            }
-          );
-        } else {
-          res.send(lsbStderr);
-        }
-      });
-      await shell.exec(
-        getNextSuperBlockBudget,
-        (nsbCode, nsbStdout, nsbStderr) => {
-          if (!nsbCode) {
-            nsbBudget = nsbStdout;
+            });
           } else {
-            res.send(nsbStderr);
+            res.send(lsbStderr);
           }
-        }
-      );
-      console.log(lsbBudget, nsbBudget);
-      res.json({ lsb, nsb, a: lsbBudget, b: nsbBudget });
-    } else {
-      res.send(stderr);
-    }
-  });
+        });
+        /**
+         * error when answering twice, the code is from the old controller structure, it seems unnecessary
+         * **/
+        // await shell.exec(getNextSuperBlockBudget, (nsbCode, nsbStdout, nsbStderr) => {
+        //   if (!nsbCode) {
+        //     nsbBudget = nsbStdout;
+        //   } else {
+        //      res.send(nsbStderr);
+        //   }
+        //    res.json({lsb, nsb, a: lsbBudget, b: nsbBudget});
+        // })
+      } else {
+        res.send(stderr);
+      }
+    })
+  } catch (err) {
+    return res.json(err)
+  }
+
+
+  /**
+   * previous code with error
+   **/
+
+  // const getGovernanceInfo = syscoinCli + ' getgovernanceinfo ';
+  // shell.exec(getGovernanceInfo, async (code, stdout, stderr) => {
+  //   if (!code) {
+  //     const governanceInfo = JSON.parse(stdout);
+  //     const lsb = governanceInfo.lastsuperblock;
+  //     const nsb = governanceInfo.nextsuperblock;
+  //     const getLastSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${lsb}`;
+  //     const getNextSuperBlockBudget = `${syscoinCli} getsuperblockbudget ${nsb}`;
+  //
+  //     shell.exec(getLastSuperBlockBudget, (lsbCode, lsbStdout, lsbStderr) => {
+  //       if (!lsbCode) {
+  //         shell.exec(
+  //           getNextSuperBlockBudget,
+  //           (nsbCode, nsbStdout, nsbStderr) => {
+  //             if (!nsbCode) {
+  //               const lsbBudget = lsbStdout.split('\n')[0];
+  //               const nsbBudget = nsbStdout.split('\n')[0];
+  //               console.log(lsbBudget, nsbBudget);
+  //               res.json([
+  //                 { block: lsb, budget: lsbBudget },
+  //                 { block: nsb, budget: nsbBudget }
+  //               ]);
+  //             } else {
+  //               res.send(nsbStderr);
+  //             }
+  //           }
+  //         );
+  //       } else {
+  //         res.send(lsbStderr);
+  //       }
+  //     });
+  //     await shell.exec(
+  //       getNextSuperBlockBudget,
+  //       (nsbCode, nsbStdout, nsbStderr) => {
+  //         if (!nsbCode) {
+  //           nsbBudget = nsbStdout;
+  //         } else {
+  //           res.send(nsbStderr);
+  //         }
+  //       }
+  //     );
+  //     console.log(lsbBudget, nsbBudget);
+  //     res.json({ lsb, nsb, a: lsbBudget, b: nsbBudget });
+  //   } else {
+  //     res.send(stderr);
+  //   }
+  // });
 });
 
 module.exports = router;
