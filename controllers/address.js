@@ -274,6 +274,13 @@ const createVotingAddress = async (req, res, next) => {
       });
     }
 
+    const currentMN = await clientRPC.callRpc('masternode_list').call().catch((err) => {
+      throw err;
+    });
+
+    // eslint-disable-next-line max-len
+    const votingAddressCurrentMns = Object.keys(currentMN).reduce((acc, el) => acc.concat(currentMN[el].votingaddress), []);
+
     if (addressesList) {
       const { arrayValue: { values: addrValues } } = addressesList;
       addrValues.forEach((addr) => {
@@ -312,13 +319,14 @@ const createVotingAddress = async (req, res, next) => {
         privateKey: `${privateKey.replace(re, '')}`.trim(),
         txId: `${txId.replace(re, '')}`.trim(),
       };
+      const existInMn = votingAddressCurrentMns.find((addr) => addr === newAddress.address);
       const isExist = resp.find((e) => e.address === newAddress.address);
       const verifyName = resp.find((e) => e.name === newAddress.name);
       if (typeof verifyName !== 'undefined') {
         newAddress.name = `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
       }
 
-      if (typeof isExist === 'undefined') {
+      if (typeof isExist === 'undefined' && typeof existInMn !== 'undefined') {
         aggregateAddresses.push(newAddress);
       }
     } else {
@@ -342,7 +350,7 @@ const createVotingAddress = async (req, res, next) => {
           privateKey: `${votingKey}`.trim(),
           txId: `${collateralHash}-${collateralIndex}`.trim(),
         };
-
+        const existInMn = votingAddressCurrentMns.find((addr) => addr === newVotingAddress.address);
         const isExist = resp.find((el) => el.address === newVotingAddress.address);
         const verifyName = resp.find((el) => el.name === newVotingAddress.name);
 
@@ -351,13 +359,13 @@ const createVotingAddress = async (req, res, next) => {
         }
 
         if (aggregateAddresses.length > 0) {
-          const verifyNameInAddresses = aggregateAddresses.find((e) => e.name === newVotingAddress.name);
+          const verifyNameInAddresses = aggregateAddresses.find((el) => el.name === newVotingAddress.name);
           if (typeof verifyNameInAddresses !== 'undefined') {
             newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
           }
         }
 
-        if (typeof isExist === 'undefined') {
+        if (typeof isExist === 'undefined' && typeof existInMn !== 'undefined') {
           aggregateAddresses.push(newVotingAddress);
         }
       });
