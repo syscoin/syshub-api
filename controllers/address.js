@@ -330,10 +330,10 @@ const createVotingAddress = async (req, res, next) => {
         aggregateAddresses.push(newAddress);
       }
     } else {
-      if (Array.isArray(JSON.parse(listMN)) === false) {
+      if (Array.isArray(listMN) === false) {
         return res.status(406).json({ ok: false, message: 'invalid format' });
       }
-      serializedArray = [...new Set(JSON.parse(listMN).map(JSON.stringify))].map(JSON.parse);
+      serializedArray = [...new Set(listMN.map(JSON.stringify))].map(JSON.parse);
 
       serializedArray.forEach((e) => {
         const {
@@ -434,6 +434,7 @@ const updateVotingAddress = async (req, res, next) => {
     const { id } = req.params;
     const { data } = req.body;
     const dataEncrypt = {};
+    const re = /['"]+/g;
     const { _fieldsProto: fieldsProto } = await admin.firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
@@ -455,7 +456,29 @@ const updateVotingAddress = async (req, res, next) => {
         message: 'you do not have permissions to perform this action',
       });
     }
-    // if (user.id !== req.user) return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
+
+    const addresses = await Promise.all(fieldsProto.addressesList.arrayValue.values.map(async (addr) => {
+      const { _fieldsProto: { name, address: addrUser } } = await admin.firestore()
+        .collection(process.env.COLLECTION_NAME_ADDRESS)
+        .doc(addr.stringValue)
+        .get()
+        .catch((err) => {
+          throw err;
+        });
+      return {
+        name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
+        address: decryptAes(addrUser.stringValue, process.env.KEY_FOR_ENCRYPTION),
+      };
+    }));
+
+    // eslint-disable-next-line max-len
+    if (typeof addresses.find((addrItem) => addrItem.name === data.name) !== 'undefined' && addresses.filter((addrItem) => addrItem.name === data.name && addrItem.address !== data.address).length > 0) {
+      if (!data.name.split('-')[1]) {
+        data.name = `${data.name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim();
+      }
+    }
+
+    // if (user.id !== req.user) return res.status(406).json({ ok: false, message: 'you do not have permissions to perform this action' });
     if (!data) return res.status(406).json({ ok: false, message: 'Required fields' });
     if (!checkDataMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' });
 
