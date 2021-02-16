@@ -587,7 +587,7 @@ const getSuperBlockBudget = async (req, res, next) => {
             "first_pay": "30m",
             "reward_eligble": "24m"
         },
-   "price_stats": {
+ "price_stats": {
               "price_usd": "0.1037",
               "price_btc": "0.00000308",
               "circulating_supply": "605,792,062.22",
@@ -598,7 +598,7 @@ const getSuperBlockBudget = async (req, res, next) => {
               "market_cap_usd": "62,707,009.00",
               "market_cap_btc": "1,860.00"
           },
-   "blockchain_stats": {
+ "blockchain_stats": {
               "version": 40200,
               "sub_version": "/Satoshi:4.2.0/",
               "protocol": 70016,
@@ -606,7 +606,7 @@ const getSuperBlockBudget = async (req, res, next) => {
               "genesis": "December 10th 2019, 1:46:40 pm",
               "avg_block": "1m 19.2s"
           },
-   "superblock_stats": {
+ "superblock_stats": {
               "last_superblock": 554280,
               "next_superblock": "SB12.656164383561643 - 554340",
               "proposal_fee": 150,
@@ -629,7 +629,7 @@ const getSuperBlockBudget = async (req, res, next) => {
               "sb4Date": "July 12th 2021",
               "sb5Date": "August 21st 2021"
           },
-   "income_stats": {
+ "income_stats": {
               "usd": {
                   "daily": "$614.64",
                   "weekly": "$4314.30",
@@ -649,7 +649,7 @@ const getSuperBlockBudget = async (req, res, next) => {
                   "yearly": "2162679.75 SYS"
               }
           },
-   "income_stats_seniority_one_year": {
+ "income_stats_seniority_one_year": {
               "usd": {
                   "daily": "$829.76",
                   "weekly": "$5824.30",
@@ -669,7 +669,7 @@ const getSuperBlockBudget = async (req, res, next) => {
                   "yearly": "2919617.66 SYS"
               }
           },
-   "income_stats_seniority_two_year": {
+ "income_stats_seniority_two_year": {
               "usd": {
                   "daily": "$1167.82",
                   "weekly": "$8197.16",
@@ -689,8 +689,8 @@ const getSuperBlockBudget = async (req, res, next) => {
                   "yearly": "4109091.52 SYS"
               }
           }
-   },
-   "mapData": {
+ },
+ "mapData": {
           "DEU": {
               "masternodes": 4,
               "fillKey": "heat255"
@@ -704,7 +704,7 @@ const getSuperBlockBudget = async (req, res, next) => {
               "fillKey": "heat64"
           }
       },
-   "mapFills": {
+ "mapFills": {
           "defaultFill": "#e8e8e8",
           "heat255": "#0000ff",
           "heat254": "#0001ff",
@@ -1206,6 +1206,7 @@ const stats = async (req, res, next) => {
     const rewardPerBlock = deflation * firstReward;
     const rewardPerBlockTwo = rewardPerBlock * deflation;
     const annualTotalRewards = rewardPerBlock * 60 * 24 * 365;
+
     const avgRewardYearly = annualTotalRewards / mnInfo.enabled;
 
     // One Year Seniority Calss
@@ -1219,65 +1220,65 @@ const stats = async (req, res, next) => {
     const twoAvgRewardYearlySen = twoSenAnnualTotalRewards / mnInfo.enabled;
 
     // ROI Calcs
-    const roi = avgRewardYearly / reqCoin;
+    const roi = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / reqCoin;
     const roiDays = (100000 / avgRewardYearly) * 365;
 
     // Without Seniority
     // USD
-    const usdDaily = (avgRewardYearly / oneDay) * sysUsd;
-    const usdWeekly = (avgRewardYearly / oneWeek) * sysUsd;
-    const usdMonthly = (avgRewardYearly / oneMonth) * sysUsd;
-    const usdYearly = avgRewardYearly * sysUsd;
+    const usdDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysUsd;
+    const usdWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek) * sysUsd;
+    const usdMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth) * sysUsd;
+    const usdYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysUsd;
 
     // BTC
-    const btcDaily = (avgRewardYearly / oneDay) * sysBtc;
-    const btcWeekly = (avgRewardYearly / oneWeek) * sysBtc;
-    const btcMonthly = (avgRewardYearly / oneMonth) * sysBtc;
-    const btcYearly = avgRewardYearly * sysBtc;
+    const btcDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysBtc;
+    const btcWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek) * sysBtc;
+    const btcMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth) * sysBtc;
+    const btcYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysBtc;
 
     // SYS
-    const sysDaily = avgRewardYearly / oneDay;
-    const sysWeekly = avgRewardYearly / oneWeek;
-    const sysMonthly = avgRewardYearly / oneMonth;
-    const sysYearly = avgRewardYearly;
+    const sysDaily = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay;
+    const sysWeekly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek;
+    const sysMonthly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth;
+    const sysYearly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0;
 
     // With One Seniority
     // USD
-    const usdDailyOne = (oneAvgRewardYearlySen / oneDay) * sysUsd;
-    const usdWeeklyOne = (oneAvgRewardYearlySen / oneWeek) * sysUsd;
-    const usdMonthlyOne = (oneAvgRewardYearlySen / oneMonth) * sysUsd;
-    const usdYearlyOne = oneAvgRewardYearlySen * sysUsd;
+    const usdDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay) * sysUsd;
+    const usdWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek) * sysUsd;
+    const usdMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth) * sysUsd;
+    const usdYearlyOne = Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 * sysUsd;
 
     // BTC
-    const btcDailyOne = (oneAvgRewardYearlySen / oneDay) * sysBtc;
-    const btcWeeklyOne = (oneAvgRewardYearlySen / oneWeek) * sysBtc;
-    const btcMonthlyOne = (oneAvgRewardYearlySen / oneMonth) * sysBtc;
-    const btcYearlyOne = (oneAvgRewardYearlySen * sysBtc);
+    const btcDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay) * sysBtc;
+    const btcWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek) * sysBtc;
+    const btcMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth) * sysBtc;
+    const btcYearlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 * sysBtc);
 
     // SYS
-    const sysDailyOne = (oneAvgRewardYearlySen / oneDay);
-    const sysWeeklyOne = (oneAvgRewardYearlySen / oneWeek);
-    const sysMonthlyOne = (oneAvgRewardYearlySen / oneMonth);
-    const sysYearlyOne = oneAvgRewardYearlySen;
+    const sysDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay);
+    const sysWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek);
+    const sysMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth);
+    const sysYearlyOne = Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0;
 
     // With Two Seniority
     // USD
-    const usdDailyTwo = (twoAvgRewardYearlySen / oneDay) * sysUsd;
-    const usdWeeklyTwo = (twoAvgRewardYearlySen / oneWeek) * sysUsd;
-    const usdMonthlyTwo = (twoAvgRewardYearlySen / oneMonth) * sysUsd;
-    const usdYearlyTwo = twoAvgRewardYearlySen * sysUsd;
+    const usdDailyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay) * sysUsd;
+    const usdWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek) * sysUsd;
+    const usdMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth) * sysUsd;
+    const usdYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 * sysUsd;
 
     // BTC
-    const btcDailyTwo = (twoAvgRewardYearlySen / oneDay) * sysBtc;
-    const btcWeeklyTwo = (twoAvgRewardYearlySen / oneWeek) * sysBtc;
-    const btcMonthlyTwo = (twoAvgRewardYearlySen / oneMonth) * sysBtc;
-    const btcYearlyTwo = twoAvgRewardYearlySen * sysBtc;
+    const btcDailyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay) * sysBtc;
+    const btcWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek) * sysBtc;
+    const btcMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth) * sysBtc;
+    const btcYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 * sysBtc;
 
     // SYS
-    const sysDailyTwo = twoAvgRewardYearlySen / oneDay;
-    const sysWeeklyTwo = twoAvgRewardYearlySen / oneWeek;
-    const sysMonthlyTwo = twoAvgRewardYearlySen / oneMonth;
-    const sysYearlyTwo = twoAvgRewardYearlySen;
+    const sysDailyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay;
+    const sysWeeklyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek;
+    const sysMonthlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth;
+    const sysYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0;
 
     return res.status(200).json({
       stats: {
