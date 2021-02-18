@@ -1,78 +1,83 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var fs = require('fs');
-var forceSsl = require('express-force-ssl');
-var https = require('https');
-var http = require('http');
+const dotEnv = require('dotenv').config();
+const os = require('os');
+const path = require('path');
+const express = require('express');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const cors = require('cors');
+const helmet = require('helmet');
+const https = require('https');
+const forceSsl = require('express-force-ssl');
+const compression = require('compression');
+const pem = require('pem');
+const routes = require('./routes/index');
+const { certificate, globalCSP } = require('./utils/config');
 
-var hskey;
-var hscert;
-var hscsr;
+const app = express();
 
-var prodURL = 'sysapiprod.cortesa.net';
-var testURL = 'sysapidev.cortesa.net';
-
-var serverCerts = fs.existsSync(`/etc/letsencrypt/live/${prodURL}`)
-  ? `/etc/letsencrypt/live/${prodURL}`
-  : `/etc/letsencrypt/live/${testURL}`;
-
-if (fs.existsSync(serverCerts)) {
-  hskey = fs.readFileSync(`${serverCerts}/privkey.pem`);
-  hscert = fs.readFileSync(`${serverCerts}/cert.pem`);
-  hscsr = fs.readFileSync(`${serverCerts}/chain.pem`);
-  // Do something
-} else {
-  hskey = fs.readFileSync('./certificates/private.key');
-  hscert = fs.readFileSync('./certificates/certificate.crt');
-  hscsr = fs.readFileSync('./certificates/ca_bundle.crt');
-}
-
-var options = {
-  key: hskey,
-  cert: hscert,
-  ca: hscsr
-};
-
-var index = require('./routes/index');
-
-var app = express();
-app.use(forceSsl);
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
+/* server configuration */
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+if (process.env.NODE_ENV === 'prod') {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
+}
+app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.disable('x-powered-By');
+app.use(globalCSP);
+/** If you are in development environment comment this line * */
+app.use(forceSsl);
+// app.set('views', path.join(__dirname, 'views'));
+// app.set('view engine', 'ejs')
 
-app.use('/', index);
+// app.use(express.static(__dirname + '/public'));
+app.use(express.static(`${process.cwd()}/frontend/dashboard/dist/dashboard/`));
+app.use(express.static(`${process.cwd()}/out/`));
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+app.use('/', routes);
+
+if (dotEnv.error) {
+  console.log(dotEnv.error);
+}
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  return res.status(500).json({ ok: false, error: err.message });
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+/** @global
+ * @function
+ * @name app.listen
+ * @desc Api initialization
+ * @param port
+ * @default 3000
+ *
+ * @param callback
+ *
+ * @return `server on port 3000 or port`
+ * */
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-// Create an HTTP service.
-http.createServer(app).listen(80);
-// Create an HTTPS service identical to the HTTP service.
-https.createServer(options, app).listen(443);
+if (process.env.NODE_ENV === 'dev') {
+  /**  use only in case you need to do tests with https or uploads to production * */
+  // if (os.platform() === 'win32') {
+  //   process.env.OPENSSL_CONF = path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.cnf');
+  //   pem.config({
+  //     pathOpenSSL: path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.exe'),
+  //   });
+  // }
+  //
+  // pem.createCertificate({ days: 1, selfSigned: true }, (err, keys) => {
+  //   if (err) {
+  //     throw err;
+  //   }
+  //   https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT_HTTPS || 3000, () => console.log('server on port 3000'));
+  // });
+  app.listen(process.env.PORT_HTTP || 3001, () => console.log(`server on port ${process.env.PORT_HTTP || 3000}`));
+} else {
+  https.createServer(certificate, app).listen(process.env.PORT_HTTPS || 3001, () => console.log(`server on port ${process.env.PORT_HTTPS || 3001}`));
+}
