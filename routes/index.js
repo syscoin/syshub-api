@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('./auth');
 const user = require('./user');
 const admin = require('./admin');
+const masternodes = require('./masternodes');
 const address = require('./address');
 const proposal = require('./proposal');
 const statsInfo = require('./statsAndInfo');
@@ -27,6 +28,10 @@ app.use('/auth',
 app.use('/admin',
   [clientApp],
   admin);
+
+app.use('/masternode',
+  [clientApp],
+  masternodes);
 
 app.use('/proposal',
   [clientApp],

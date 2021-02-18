@@ -10,6 +10,11 @@ const validateAddress = (address) => new Promise((resolve, reject) => {
     });
 });
 
+const validateIp = (ip) => {
+  if (RegExp(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])(.(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])){3}$/).test(ip) !== true) return false;
+  return true;
+};
+
 const checkDataMN = (address) => {
   if (RegExp(/-0|-1/).test(address.txId) !== true) return false;
   validateAddress(address.address).then((valid) => valid === true);
@@ -31,4 +36,5 @@ module.exports = {
   checkBodyEmpty,
   componentToHex,
   rgbToHex,
+  validateIp,
 };
