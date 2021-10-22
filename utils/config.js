@@ -4,7 +4,7 @@ const firebase = require('firebase');
 const admin = require('firebase-admin');
 const fs = require('fs');
 const csp = require('content-security-policy');
-const serviceAccount = require('../keys/syshub-dev-e5c7cc32fb0e.json');
+const serviceAccount = require('../keys/syshub-dev-firebase-adminsdk-3jj4e-cd38311961.json');
 
 /** Firebase app initialization * */
 firebase.initializeApp({
@@ -23,7 +23,7 @@ admin.initializeApp({
 });
 
 const nodeConfig = {
-  host: process.env.NODE_ENV !== 'dev' ? process.env.NODE_SYSCOIN_HOST_RPC : '127.0.0.1',
+  host:'127.0.0.1',
   rpcPort: process.env.NODE_SYSCOIN_PORT_RPC,
   username: process.env.NODE_SYSCOIN_USERNAME_RPC,
   password: process.env.NODE_SYSCOIN_PASSWORD_RPC,
