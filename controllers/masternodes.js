@@ -34,7 +34,7 @@ const prepareMn = (req, res, next) => {
       return res.status(406).json({ ok: false, message: 'invalid ip' });
     }
 
-    const command = `protx_register_prepare ${collateralHash} ${collateralIndex} ${ipAddress}:18369 ${ownerKeyAddr} ${operatorPubKey} ${votingKeyAddr} ${votingKeyAddr} ${operatorReward} ${payoutAddress} ${feeSourceAddress || ''}`.trim();
+    const command = `protx_register_prepare ${collateralHash} ${collateralIndex} ${ipAddress}:${process.env.NODE_ENV === 'dev'?'18369':'8369'} ${ownerKeyAddr} ${operatorPubKey} ${votingKeyAddr} ${votingKeyAddr} ${operatorReward} ${payoutAddress} ${feeSourceAddress || ''}`.trim();
 
     return res.status(200).json({ ok: true, command });
   } catch (err) {
