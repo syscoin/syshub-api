@@ -213,6 +213,12 @@ const getOneUser = async (req, res, next) => {
 const getUser2fa = async (req, res, next) => {
     try {
         const {id} = req.params;
+        if (req.user !== id) {
+            return res.status(406).json({
+                ok: false,
+                message: 'you do not have permissions to perform this action',
+            });
+        }
         const user = await admin.firestore()
             .collection(process.env.COLLECTION_NAME_USERS)
             .doc(id)
