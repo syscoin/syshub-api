@@ -5,7 +5,7 @@ const {
   getUser2fa,
   updateUser,
   updateActionsUser,
-  deleteUser,
+  deleteUser, signOut,
 } = require('../controllers/user');
 const fbAuth = require('../middlewares/fbAuth');
 const isAdmin = require('../middlewares/isAdmin');
@@ -18,5 +18,6 @@ router.get('/:id', fbAuth, getOneUser);
 router.put('/extend/:id', fbAuth, updateActionsUser);
 router.put('/:id', fbAuth, updateUser);
 router.delete('/:id', fbAuth, deleteUser);
+router.post('/revoke/:id', fbAuth, signOut);
 
 module.exports = router;

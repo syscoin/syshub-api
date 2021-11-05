@@ -140,7 +140,7 @@ const getOneUser = async (req, res, next) => {
         const authData = {};
         const roles = [];
         if (req.user !== id) {
-            return res.status(406).json({
+            return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
@@ -214,7 +214,7 @@ const getUser2fa = async (req, res, next) => {
     try {
         const {id} = req.params;
         if (req.user !== id) {
-            return res.status(406).json({
+            return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
@@ -273,7 +273,7 @@ const updateUser = async (req, res, next) => {
     try {
         const {id} = req.params;
         if (req.user !== id) {
-            return res.status(406).json({
+            return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
@@ -323,7 +323,7 @@ const updateActionsUser = async (req, res, next) => {
     try {
         const {id} = req.params;
         if (req.user !== id) {
-            return res.status(406).json({
+            return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
@@ -331,6 +331,14 @@ const updateActionsUser = async (req, res, next) => {
         const {data} = req.body;
         const newData = {};
         if (!data) return res.status(406).json({ok: false, message: 'required fields'});
+        if(data.twoFa === true){
+            if (data.sms === true && data.gAuth === true){
+                return res.status(400).json({
+                    ok:false,
+                    message:'invalid methods'
+                })
+            }
+        }
         // eslint-disable-next-line no-restricted-syntax
         for (const key in data) {
             if (key !== 'pwd' && key !== 'twoFa' && key !== 'sms' && key !== 'gAuth' && key !== 'gAuthSecret') {
@@ -422,7 +430,7 @@ const deleteUser = async (req, res, next) => {
         const proposalUser = [];
 
         if (req.user !== id) {
-            return res.status(406).json({
+            return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
@@ -523,6 +531,22 @@ const deleteUser = async (req, res, next) => {
     }
 };
 
+const signOut=async (req,res,next)=>{
+
+    if (req.user !== req.params.id) {
+        return res.status(403).json({
+            ok: false,
+            message: 'you do not have permissions to perform this action',
+        });
+    }
+  try {
+      const x=await admin.auth().revokeRefreshTokens(req.params.id)
+      console.log(x)
+  }catch (err) {
+      next(err)
+  }
+}
+
 module.exports = {
-    getAllUser, getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser,
+    getAllUser, getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser,signOut
 };

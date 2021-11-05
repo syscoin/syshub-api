@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { checkBodyEmpty, checkDataMN } = require('../utils/helpers');
+const { checkBodyEmpty, checkDataMN, validateAddress} = require('../utils/helpers');
 const { clientRPC, admin } = require('../utils/config');
 const { encryptAes, decryptAes } = require('../utils/encrypt');
 /**
@@ -44,7 +44,7 @@ const getAllVotingAddressByUser = async (req, res, next) => {
     }
 
     if (id !== req.user) {
-      return res.status(406).json({
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
       });
@@ -182,7 +182,7 @@ const getVotingAddress = async (req, res, next) => {
 
     if (typeof addressesList !== 'undefined' && addressesList.arrayValue.values.length > 0) {
       if (typeof addressesList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
-        return res.status(406).json({
+        return res.status(403).json({
           ok: false,
           message: 'you do not have permissions to perform this action',
         });
@@ -451,7 +451,7 @@ const updateVotingAddress = async (req, res, next) => {
     }
 
     if (typeof fieldsProto.addressesList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
-      return res.status(406).json({
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
       });
@@ -481,7 +481,13 @@ const updateVotingAddress = async (req, res, next) => {
     // if (user.id !== req.user) return res.status(406).json({ ok: false, message: 'you do not have permissions to perform this action' });
     if (!data) return res.status(406).json({ ok: false, message: 'Required fields' });
     if (!checkDataMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' });
-
+    const validateAddr=await validateAddress(data.address)
+    if (!validateAddr){
+      return res.status(400).json({
+        ok:false,
+        message:'invalid address'
+      })
+    }
     Object.keys(data).forEach((key) => {
       dataEncrypt[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
     });
@@ -534,7 +540,7 @@ const destroyVotingAddress = async (req, res, next) => {
       });
     }
     if (uid !== req.user) {
-      return res.status(406).json({
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
       });
