@@ -33,7 +33,14 @@ let firebaseAuthenticated = async (req, res, next) => {
             if ((new Date().getTime() / 1000) > decodedToken.exp) {
                 return res.status(401).json({ok: false, message: 'Not authenticated'});
             }
-
+            const tokenSearch=req.header('Authorization').replace('Bearer', '').trim()
+            const tokenExpired =await admin.firestore()
+                .collection(process.env.COLLECTION_NAME_TOKENS)
+                .where('token', '==', `${tokenSearch}`)
+                .get()
+            if (!tokenExpired.empty) {
+                return res.status(401).json({ok: false,  message: 'token has expired'});
+            }
             if (decodedToken.user_id === jwt.user_id) {
                 req.user = user.uid
                 return next()

@@ -1,11 +1,7 @@
 const {admin} = require('../utils/config');
 const {encryptAes} = require('../utils/encrypt');
-const {verifyAuthCode} = require("../utils/helpers");
-const {randomBytes, scrypt} = require('crypto');
-const {promisify} = require('util');
 const firebase = require("firebase");
 
-const s = promisify(scrypt)
 /**
  * @function
  * @name getAllUser
@@ -331,11 +327,11 @@ const updateActionsUser = async (req, res, next) => {
         const {data} = req.body;
         const newData = {};
         if (!data) return res.status(406).json({ok: false, message: 'required fields'});
-        if(data.twoFa === true){
-            if (data.sms === true && data.gAuth === true){
+        if (data.twoFa === true) {
+            if (data.sms === true && data.gAuth === true) {
                 return res.status(400).json({
-                    ok:false,
-                    message:'invalid methods'
+                    ok: false,
+                    message: 'invalid methods'
                 })
             }
         }
@@ -357,7 +353,7 @@ const updateActionsUser = async (req, res, next) => {
                 throw err;
             });
         const verify = await admin.auth().getUser(id)
-       const x= await firebase.auth().signInWithEmailAndPassword(verify.email, data.pwd);
+        const x = await firebase.auth().signInWithEmailAndPassword(verify.email, data.pwd);
         // eslint-disable-next-line no-underscore-dangle
         if (user._fieldsProto) {
             // eslint-disable-next-line no-restricted-syntax
@@ -371,7 +367,7 @@ const updateActionsUser = async (req, res, next) => {
                             newData[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
                         }
                     } else {
-                        if (key !== 'pwd'){
+                        if (key !== 'pwd') {
                             newData[key] = data[key];
                         }
                     }
@@ -531,22 +527,26 @@ const deleteUser = async (req, res, next) => {
     }
 };
 
-const signOut=async (req,res,next)=>{
-
+const signOut = async (req, res, next) => {
+    const {token} = req.body;
     if (req.user !== req.params.id) {
         return res.status(403).json({
             ok: false,
             message: 'you do not have permissions to perform this action',
         });
     }
-  try {
-      const x=await admin.auth().revokeRefreshTokens(req.params.id)
-      console.log(x)
-  }catch (err) {
-      next(err)
-  }
+    try {
+        await admin.firestore()
+            .collection(process.env.COLLECTION_NAME_TOKENS).add({token})
+        await admin.auth().revokeRefreshTokens(req.params.id)
+        res.status(200).json({
+            ok: true
+        })
+    } catch (err) {
+        next(err)
+    }
 }
 
 module.exports = {
-    getAllUser, getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser,signOut
+    getAllUser, getOneUser, getUser2fa, updateUser, updateActionsUser, deleteUser, signOut
 };

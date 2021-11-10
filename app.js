@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'prod') {
 app.use(cors());
 app.use(helmet());
 app.use(compression());
-app.disable('x-powered-By');
+routes.disable('x-powered-by');
 app.use(globalCSP);
 /** If you are in development environment comment this line * */
 app.use(forceSsl);
