@@ -17,7 +17,7 @@ app.get('/documentation', (req, res) => res.sendFile(`${process.cwd()}/out/globa
 
 app.use('/user', user);
 
-app.use('/auth', auth);
+// app.use('/auth', auth);
 
 app.use('/admin', admin);
 

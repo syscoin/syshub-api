@@ -7,12 +7,12 @@ const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
 const https = require('https');
-const forceSsl = require('express-force-ssl');
+// const forceSsl = require('express-force-ssl');
 const compression = require('compression');
 const pem = require('pem');
 const routes = require('./routes/index');
-const { certificate, globalCSP } = require('./utils/config');
-
+const { globalCSP } = require('./utils/config');
+const greenlock = require("greenlock-express");
 const app = express();
 
 /* server configuration */
@@ -29,7 +29,7 @@ app.use(compression());
 routes.disable('x-powered-by');
 app.use(globalCSP);
 /** If you are in development environment comment this line * */
-app.use(forceSsl);
+// app.use(forceSsl);
 // app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'ejs')
 
@@ -62,22 +62,14 @@ app.use((err, req, res, next) => {
  * @return `server on port 3000 or port`
  * */
 
-if (process.env.NODE_ENV === 'dev') {
-  /**  use only in case you need to do tests with https or uploads to production * */
-  // if (os.platform() === 'win32') {
-  //   process.env.OPENSSL_CONF = path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.cnf');
-  //   pem.config({
-  //     pathOpenSSL: path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.exe'),
-  //   });
-  // }
-  //
-  // pem.createCertificate({ days: 1, selfSigned: true }, (err, keys) => {
-  //   if (err) {
-  //     throw err;
-  //   }
-  //   https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT_HTTPS || 3000, () => console.log('server on port 3000'));
-  // });
-  app.listen(process.env.PORT_HTTP || 3001, () => console.log(`server on port ${process.env.PORT_HTTP || 3000}`));
-} else {
-  https.createServer(certificate, app).listen(process.env.PORT_HTTPS || 3001, () => console.log(`server on port ${process.env.PORT_HTTPS || 3001}`));
-}
+app.listen(process.env.PORT_HTTP || 3000);
+greenlock.init({
+  packageRoot: __dirname,
+  configDir: "./greenlock.d",
+
+  // contact for security and critical bug notices
+  maintainerEmail: "thaymerapv@gmail.com",
+
+  // whether or not to run at cloudscale
+  cluster: false
+}).serve(app)

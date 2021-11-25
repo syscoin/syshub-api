@@ -243,6 +243,7 @@ const getUser2fa = async (req, res, next) => {
         }
         return res.status(204).json({ok: false, message: 'not content'});
     } catch (err) {
+        console.log(err)
         next(err);
     }
 };

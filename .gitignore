@@ -3,3 +3,4 @@
 /frontend/dashboard/node_modules
 /.env
 /keys*
+/functions/node_modules
