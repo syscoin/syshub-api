@@ -4,7 +4,7 @@ const firebase = require('firebase');
 const admin = require('firebase-admin');
 const csp = require('content-security-policy');
 const serviceAccount = require('../keys/syshub-dev-firebase-adminsdk-3jj4e-cd38311961.json');
-
+const fs = require('fs');
 /** Firebase app initialization * */
 firebase.initializeApp({
     apiKey: process.env.FIREBASE_KEY,
@@ -31,11 +31,11 @@ const nodeConfig = {
 
 const clientRPC = new SyscoinRpcClient(nodeConfig);
 
-// const certificate = {
-//   key: fs.readFileSync(process.env.NODE_ENV === 'prod' ? process.env.SSL_KEY_ROUTE : './certificates/old/private.key'),
-//   cert: fs.readFileSync(process.env.NODE_ENV === 'prod' ? process.env.SSL_CRT_ROUTE : './certificates/old/certificate.crt'),
-//   // ca: fs.readFileSync('./certificates/old/ca_bundle.crt')
-// };
+const certificate = {
+  key: fs.readFileSync(process.env.NODE_ENV === 'prod' ? process.env.SSL_KEY_ROUTE : './certificates/old/private.key'),
+  cert: fs.readFileSync(process.env.NODE_ENV === 'prod' ? process.env.SSL_CRT_ROUTE : './certificates/old/certificate.crt'),
+  // ca: fs.readFileSync('./certificates/old/ca_bundle.crt')
+};
 
 const cspPolicy = {
     'report-uri': '/reporting',
@@ -52,5 +52,6 @@ module.exports = {
     firebase,
     admin,
     globalCSP,
-    localCSP
+    localCSP,
+    certificate
 };
