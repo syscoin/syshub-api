@@ -1,6 +1,7 @@
 const {admin} = require('../utils/config');
-const {encryptAes} = require('../utils/encrypt');
+const {encryptAes, decryptAes} = require('../utils/encrypt');
 const firebase = require("firebase");
+const {verifyAuthCode} = require("../utils/helpers");
 
 /**
  * @function
@@ -319,14 +320,46 @@ const updateUser = async (req, res, next) => {
 const updateActionsUser = async (req, res, next) => {
     try {
         const {id} = req.params;
+        const {method} = req.query;
+        const {data} = req.body;
+
+        if (!data.pwd) {
+            return res.status(400).json({
+                ok: false,
+                message: 'required fields'
+            })
+        }
+
+        const newData = {};
         if (req.user !== id) {
             return res.status(403).json({
                 ok: false,
                 message: 'you do not have permissions to perform this action',
             });
         }
-        const {data} = req.body;
-        const newData = {};
+        const user = await admin.firestore()
+            .collection(process.env.COLLECTION_NAME_USERS)
+            .doc(id)
+            .get()
+            .catch((err) => {
+                throw err;
+            });
+
+        const verify = await admin.auth().getUser(id)
+        await firebase.auth().signInWithEmailAndPassword(verify.email, data.pwd);
+
+        if (method === 'gauth-disabled') {
+            const userdata = user.data();
+            const seed = decryptAes(userdata.gAuthSecret, process.env.KEY_FOR_ENCRYPTION)
+            const seedcode = decryptAes(seed, process.env.KEY_FOR_ENCRYPTION);
+            const verifycode = verifyAuthCode(seedcode, data.code)
+            if (!verifycode) {
+                return res.status(400).json({
+                    ok: false,
+                    message: 'Google Authenticator code invalid'
+                })
+            }
+        }
         if (!data) return res.status(406).json({ok: false, message: 'required fields'});
         if (data.twoFa === true) {
             if (data.sms === true && data.gAuth === true) {
@@ -336,44 +369,32 @@ const updateActionsUser = async (req, res, next) => {
                 })
             }
         }
+
         // eslint-disable-next-line no-restricted-syntax
-        for (const key in data) {
-            if (key !== 'pwd' && key !== 'twoFa' && key !== 'sms' && key !== 'gAuth' && key !== 'gAuthSecret') {
+        Object.keys(data).find((key) => {
+            if (key !== 'pwd' && key !== 'twoFa' && key !== 'sms' && key !== 'gAuth' && key !== 'gAuthSecret' && key !== 'code') {
                 return res.status(406).json({
                     ok: false,
                     message: 'You can\'t update',
                 });
             }
-        }
+        })
 
-        const user = await admin.firestore()
-            .collection(process.env.COLLECTION_NAME_USERS)
-            .doc(id)
-            .get()
-            .catch((err) => {
-                throw err;
-            });
-        const verify = await admin.auth().getUser(id)
-        const x = await firebase.auth().signInWithEmailAndPassword(verify.email, data.pwd);
         // eslint-disable-next-line no-underscore-dangle
         if (user._fieldsProto) {
-            // eslint-disable-next-line no-restricted-syntax
-            for (const key in data) {
-                // eslint-disable-next-line no-prototype-builtins
-                if (data.hasOwnProperty(key)) {
-                    if (key === 'gAuthSecret') {
-                        if (data[key] === null) {
-                            newData[key] = data[key];
-                        } else {
-                            newData[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
-                        }
+            delete data.pwd;
+            delete data.code;
+            Object.keys(data).forEach((key) => {
+                if (key === 'gAuthSecret') {
+                    if (data[key] === null) {
+                        newData[key] = data[key];
                     } else {
-                        if (key !== 'pwd') {
-                            newData[key] = data[key];
-                        }
+                        newData[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
                     }
+                } else {
+                    newData[key] = data[key];
                 }
-            }
+            })
         }
         await admin.firestore()
             .collection(process.env.COLLECTION_NAME_USERS)
@@ -384,12 +405,18 @@ const updateActionsUser = async (req, res, next) => {
             });
         return res.status(200).json({ok: true, message: 'Updated data'});
     } catch (err) {
-        // if (err.message === 'signInWithEmailAndPassword failed: Second argument "password" must be a valid string.'){
-        //     return  res.status(406).json({
-        //         ok:false,
-        //         message:'invalid changes'
-        //     })
-        // }
+        if (err.message === 'The password is invalid or the user does not have a password.') {
+            return res.status(406).json({
+                ok: false,
+                message: 'invalid changes'
+            })
+        }
+        if (err.message === 'signInWithEmailAndPassword failed: Second argument "password" must be a valid string.') {
+            return res.status(406).json({
+                ok: false,
+                message: 'invalid changes'
+            })
+        }
         next(err);
     }
 };

@@ -87,7 +87,7 @@ let firebaseAuthenticated = async (req, res, next) => {
             ok: false,
             message: 'Decoding Firebase ID token failed.'
         });
-        throw err
+        next(err)
     }
 }
 
