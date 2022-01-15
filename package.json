@@ -36,7 +36,7 @@
     "react-swipeable-views": "^0.12.10",
     "secp256k1": "^3.5.2",
     "serve-favicon": "^2.4.5",
-    "shelljs": "^0.8.1",
+    "shelljs": "^0.8.5",
     "superagent": "^3.8.1"
   }
 }
