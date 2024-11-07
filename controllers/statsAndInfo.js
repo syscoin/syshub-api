@@ -982,8 +982,7 @@ const stats = async (req, res, next) => {
     for (let i = 255; i >= 0; i -= 1) {
       mapFills[`heat${i}`] = rgbToHex(0, 255 - i, 255);
     }
-
-    const mns = await clientRPC.callRpc('masternode_list').call().catch((err) => {
+    const mns = await clientRPC.callRpc('masternode_list').call(true).catch((err) => {
       throw err;
     });
 

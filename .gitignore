@@ -4,3 +4,4 @@
 /.env
 /keys*
 /functions/node_modules
+.firebase-service-account.json

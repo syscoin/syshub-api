@@ -3,13 +3,12 @@ const {rpcServices} = require('@syscoin/syscoin-js');
 const firebase = require('firebase');
 const admin = require('firebase-admin');
 const csp = require('content-security-policy');
-const serviceAccount = require('../keys/syshub-dev-firebase-adminsdk-3jj4e-cd38311961.json');
+const serviceAccount = require('../.firebase-service-account.json');
 const fs = require('fs');
 /** Firebase app initialization * */
 firebase.initializeApp({
     apiKey: process.env.FIREBASE_KEY,
     authDomain: process.env.FIREBASE_DOMAIN,
-    databaseURL: process.env.FIREBASE_DATABASE,
     projectId: process.env.FIREBASE_PROJECT_ID,
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.FIREBASE_SENDER_ID,
@@ -17,16 +16,15 @@ firebase.initializeApp({
 
 /** Firebase admin initialization * */
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://syshub-dev.firebaseio.com',
+    credential: admin.credential.cert(serviceAccount)
 });
 
 const nodeConfig = {
-    host: '127.0.0.1',
+    host: process.env.NODE_SYSCOIN_HOST_RPC,
     rpcPort: process.env.NODE_SYSCOIN_PORT_RPC,
     username: process.env.NODE_SYSCOIN_USERNAME_RPC,
     password: process.env.NODE_SYSCOIN_PASSWORD_RPC,
-    logLevel: process.env.NODE_SYSCOIN_LOG_LEVEL_RPC,
+    // logLevel: process.env.NODE_SYSCOIN_LOG_LEVEL_RPC,
 };
 
 const clientRPC = new SyscoinRpcClient(nodeConfig);

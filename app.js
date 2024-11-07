@@ -29,7 +29,7 @@ app.use(compression());
 routes.disable('x-powered-by');
 app.use(globalCSP);
 /** If you are in development environment comment this line * */
-app.use(forceSsl);
+// app.use(forceSsl);
 // app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'ejs')
 
