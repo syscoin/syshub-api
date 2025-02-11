@@ -8,16 +8,21 @@ take into account the .env values for project initialization, any project initia
 ## Scripts
 
 ### `npm run prod`
+
     Runs the app in the production mode.
 
 ### `npm run dev`
+
     Runs the app in the development mode.
 
 ### `npm run test`
+
     run tests
 
 ### `npm run test:watch`
+
     Runs test and observe changes
 
 ### `npm run doc`
-    Generate documentation.      
+
+    Generate documentation.

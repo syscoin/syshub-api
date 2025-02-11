@@ -13,13 +13,12 @@
  * @return {object} positive answer
  */
 
-let verifyClient = (req, res, next) => {
-  let {appclient} = req.headers
+const verifyClient = (req, res, next) => {
+  const { appclient } = req.headers
   if (appclient === 'sysnode-info') {
-    next()
-  } else {
-    return res.status(406).json({ok: false, message: 'not allowed'})
+    return next()
   }
+  return res.status(406).json({ ok: false, message: 'not allowed' })
 }
 
-module.exports = verifyClient;
+module.exports = verifyClient

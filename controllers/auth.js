@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const { admin } = require('../utils/config');
+const jwt = require('jsonwebtoken')
+const { admin } = require('../utils/config')
 /**
  * @function
  * @name register
@@ -17,46 +17,54 @@ const { admin } = require('../utils/config');
 // eslint-disable-next-line consistent-return
 const register = async (req, res, next) => {
   try {
-    const { uid } = req.body;
-    if (!uid) return res.status(406).json({ ok: false, message: 'required fields' });
+    const { uid } = req.body
+    if (!uid) return res.status(406).json({ ok: false, message: 'required fields' })
 
     const userData = {
       sms: false,
       gAuth: false,
       twoFa: false,
       gAuthSecret: null,
-    };
-    const verifyUser = await admin.firestore()
+    }
+    const verifyUser = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(uid)
-      .get();
+      .get()
     // eslint-disable-next-line no-underscore-dangle
     if (typeof verifyUser._fieldsProto !== 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'Existing users',
-      });
+      })
     }
-    await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(uid).set(userData);
-    const nUser = await admin.firestore()
+    await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(uid)
+      .set(userData)
+    const nUser = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_INFO)
       .doc(process.env.COLLECTION_INFO_UID)
-      .get();
-    await admin.firestore()
+      .get()
+    await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_INFO)
       .doc(process.env.COLLECTION_INFO_UID)
       // eslint-disable-next-line no-underscore-dangle
-      .update({ nUsers: Number(nUser._fieldsProto.nUsers.integerValue) + 1 });
-    await admin.firestore()
+      .update({ nUsers: Number(nUser._fieldsProto.nUsers.integerValue) + 1 })
+    await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_ROLE)
       .doc(uid)
-      .set({ role: [process.env.ROLE_USER] });
-    return res.status(200).json({ ok: true, message: 'registered user' });
+      .set({ role: [process.env.ROLE_USER] })
+    return res.status(200).json({ ok: true, message: 'registered user' })
   } catch (err) {
     // if (err.message === 'The email address is already in use by another account.') return res.status(200).json({ok: false, message: 'The email address is already in use by another account.'})
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -77,23 +85,28 @@ const register = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (email !== process.env.EMAIL_DASHBOARD
-            || password !== process.env.PASSWORD_DASHBOARD) {
-      return res.status(406).json({ ok: false, message: 'wrong username or password' });
+    const { email, password } = req.body
+    if (
+      email !== process.env.EMAIL_DASHBOARD
+      || password !== process.env.PASSWORD_DASHBOARD
+    ) {
+      return res
+        .status(406)
+        .json({ ok: false, message: 'wrong username or password' })
     }
     jwt.sign(
       { account: process.env.EMAIL_DASHBOARD },
       Buffer.from(process.env.PASSWORD_DASHBOARD).toString('base64'),
-      { expiresIn: '7d' }, (err, token) => {
+      { expiresIn: '7d' },
+      (err, token) => {
         if (err) {
-          throw err;
+          throw err
         }
-        return res.status(200).json({ ok: true, token });
+        return res.status(200).json({ ok: true, token })
       },
-    );
+    )
   } catch (err) {
-    next(err);
+    next(err)
   }
 
   /*
@@ -118,9 +131,9 @@ const login = async (req, res, next) => {
        next(err)
      }
     */
-};
+}
 
 module.exports = {
   register,
   login,
-};
+}

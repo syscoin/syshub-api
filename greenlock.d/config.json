@@ -2,9 +2,7 @@
   "sites": [
     {
       "subject": "syshub-api.syscoin.org",
-      "altnames": [
-        "www.syshub-api.syscoin.org"
-      ],
+      "altnames": ["www.syshub-api.syscoin.org"],
       "renewAt": 1
     }
   ],

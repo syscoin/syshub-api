@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express')
 const {
   check,
   prepare,
@@ -11,23 +11,23 @@ const {
   getAllHiddenProposal,
   createHiddenProposal,
   deleteHiddenProposal,
-} = require('../controllers/proposal');
+} = require('../controllers/proposal')
 
-const fbAuth = require('../middlewares/fbAuth');
-const isAdmin = require('../middlewares/isAdmin');
+const fbAuth = require('../middlewares/fbAuth')
+const isAdmin = require('../middlewares/isAdmin')
 
-const router = express.Router();
+const router = express.Router()
 
-router.get('/:id', [fbAuth], getOneProposal);
-router.get('/pending/recover', [fbAuth], getProposalsPendingByUser);
-router.post('/check', [fbAuth], check);
-router.post('/prepare', [fbAuth], prepare);
-router.put('/submit/:id', [fbAuth], submit);
-router.post('/vote', [fbAuth], vote);
-router.put('/:id', [fbAuth], updateProposal);
-router.delete('/:id', [fbAuth], deleteProposal);
-router.get('/hiddenproposal/all', [fbAuth, isAdmin], getAllHiddenProposal);
-router.post('/hiddenproposal', [fbAuth, isAdmin], createHiddenProposal);
-router.delete('/hiddenproposal/:hash', [fbAuth, isAdmin], deleteHiddenProposal);
+router.get('/:id', [fbAuth], getOneProposal)
+router.get('/pending/recover', [fbAuth], getProposalsPendingByUser)
+router.post('/check', [fbAuth], check)
+router.post('/prepare', [fbAuth], prepare)
+router.put('/submit/:id', [fbAuth], submit)
+router.post('/vote', [fbAuth], vote)
+router.put('/:id', [fbAuth], updateProposal)
+router.delete('/:id', [fbAuth], deleteProposal)
+router.get('/hiddenproposal/all', [fbAuth, isAdmin], getAllHiddenProposal)
+router.post('/hiddenproposal', [fbAuth, isAdmin], createHiddenProposal)
+router.delete('/hiddenproposal/:hash', [fbAuth, isAdmin], deleteHiddenProposal)
 
-module.exports = router;
+module.exports = router

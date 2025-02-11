@@ -9,15 +9,17 @@
     "dev": "nodemon app.js",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "doc": "jsdoc ./controllers/. ./middlewares/."
+    "doc": "jsdoc ./controllers/. ./middlewares/.",
+    "format": "prettier --write .",
+    "lint": "eslint ."
   },
   "keywords": [],
-  "author": "thaymerapv@gmail.com",
+  "author": "ted@syscoin.org",
   "license": "ISC",
   "dependencies": {
     "@jest/globals": "^26.6.2",
     "@syscoin/syscoin-js": "^4.2.0",
-    "axios": "^0.21.1",
+    "axios": "^1.7.9",
     "body-parser": "^1.19.0",
     "compression": "^1.7.4",
     "content-security-policy": "^0.3.4",
@@ -31,18 +33,18 @@
     "express": "^4.17.1",
     "express-force-ssl": "^0.3.2",
     "express-formidable": "^1.2.0",
-    "firebase": "^8.2.0",
-    "firebase-admin": "^9.11.0",
+    "firebase": "^11.3.0",
+    "firebase-admin": "^13.1.0",
+    "firebase-functions": "^6.3.1",
     "geoip-country": "^4.0.52",
     "greenlock-express": "^4.0.3",
     "helmet": "^4.1.1",
     "i18n-iso-countries": "^6.4.0",
-    "jest-extended": "^0.11.5",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^3.1.2",
     "moment": "^2.29.1",
     "morgan": "^1.10.0",
-    "nodemon": "^2.0.4",
+    "nodemon": "^3.1.9",
     "numeral": "^2.0.6",
     "pem": "^1.14.4",
     "pretty-ms": "^7.0.1",
@@ -52,8 +54,11 @@
     "sweetalert2": "^10.10.0"
   },
   "devDependencies": {
-    "jest": "^26.6.3",
-    "jsdoc": "^3.6.7"
+    "firebase-tools": "^13.30.0",
+    "jest": "^27.5.1",
+    "jest-extended": "^4.0.2",
+    "jsdoc": "^4.0.4",
+    "prettier": "^3.5.0"
   },
   "jest": {
     "testEnvironment": "node",

@@ -1,13 +1,13 @@
-const axios = require('axios');
-const moment = require('moment');
-const numeral = require('numeral');
-const countries = require('i18n-iso-countries');
-const geoip = require('geoip-country');
+const axios = require('axios')
+const moment = require('moment')
+const numeral = require('numeral')
+const countries = require('i18n-iso-countries')
+const geoip = require('geoip-country')
 
-const ms = require('pretty-ms');
-const { rgbToHex } = require('../utils/helpers');
+const ms = require('pretty-ms')
+const { rgbToHex } = require('../utils/helpers')
 // const { checkBodyEmpty } = require('../utils/helpers');
-const { clientRPC, admin } = require('../utils/config');
+const { clientRPC, admin } = require('../utils/config')
 
 /**
  * @function
@@ -62,52 +62,58 @@ const masterNodes = async (req, res, next) => {
   try {
     const {
       page, sortBy, sortDesc, perPage,
-    } = req.query;
-    let { search } = req.query;
+    } = req.query
+    let { search } = req.query
     if (typeof search !== 'undefined') {
-      search.replace(/ /g, '');
+      search.replace(/ /g, '')
     } else {
-      search = '';
+      search = ''
     }
 
-    const masternodesArr = [];
-    let perPageDefault;
-    let newSearch = '';
-    const filteredMN = [];
-    const vracajARR = [];
+    const masternodesArr = []
+    let perPageDefault
+    let newSearch = ''
+    const filteredMN = []
+    const vracajARR = []
 
     if (perPage > 90 || perPage < 1) {
-      perPageDefault = 30;
+      perPageDefault = 30
     } else {
-      perPageDefault = perPage;
+      perPageDefault = perPage
     }
 
     if (search.includes(':')) {
       // eslint-disable-next-line prefer-destructuring
-      newSearch = search.split(':')[0];
+      newSearch = search.split(':')[0]
     } else {
-      newSearch = search;
+      newSearch = search
     }
-    const mns = await clientRPC.callRpc('masternode_list').call().catch((err) => {
-      throw err;
-    });
+    const mns = await clientRPC
+      .callRpc('masternode_list')
+      .call()
+      .catch((err) => {
+        throw err
+      })
 
     Object.keys(mns).forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(mns, key)) {
-        masternodesArr.push(mns[key]);
+        masternodesArr.push(mns[key])
       }
-    });
+    })
 
-    for (const masternode of masternodesArr) { // search filter
-      if (masternode.address.split(':')[0].includes(newSearch)
-        || masternode.payee.toUpperCase().includes(newSearch.toUpperCase())) {
-        const pushObj = { ...masternode };
+    for (const masternode of masternodesArr) {
+      // search filter
+      if (
+        masternode.address.split(':')[0].includes(newSearch)
+        || masternode.payee.toUpperCase().includes(newSearch.toUpperCase())
+      ) {
+        const pushObj = { ...masternode }
         if (pushObj.lastpaidtime === 0) {
-          pushObj.lastpaidtimeS = -Infinity;
-          pushObj.lastpaidtime = 'Never Paid';
+          pushObj.lastpaidtimeS = -Infinity
+          pushObj.lastpaidtime = 'Never Paid'
         } else {
-          pushObj.lastpaidtimeS = pushObj.lastpaidtime;
-          pushObj.lastpaidtime = moment.unix(pushObj.lastpaidtime).fromNow();
+          pushObj.lastpaidtimeS = pushObj.lastpaidtime
+          pushObj.lastpaidtime = moment.unix(pushObj.lastpaidtime).fromNow()
         }
         // pushObj.lastseenS = pushObj.lastseen;
         // pushObj.lastseen = moment.unix(pushObj.lastseen).fromNow();
@@ -119,7 +125,7 @@ const masterNodes = async (req, res, next) => {
         // if (pushObj.activeseconds.includes('d')) {
         //   pushObj.activeseconds = `${pushObj.activeseconds.split('m')[0]}m`;
         // }
-        filteredMN.push(pushObj);
+        filteredMN.push(pushObj)
       }
     }
     // if (sortBy === 'lastSeen') {
@@ -129,28 +135,34 @@ const masterNodes = async (req, res, next) => {
     //   filteredMN.sort((a, b) => a.activesecondsS - b.activesecondsS);
     // }else
     if (sortBy === 'lastPayment') {
-      filteredMN.sort((a, b) => a.lastpaidtimeS - b.lastpaidtimeS);
+      filteredMN.sort((a, b) => a.lastpaidtimeS - b.lastpaidtimeS)
     } else {
       filteredMN.sort((a, b) => {
-        if (a[sortBy] < b[sortBy]) return -1;
-        if (a[sortBy] > b[sortBy]) return 1;
-        return 0;
-      });
+        if (a[sortBy] < b[sortBy]) return -1
+        if (a[sortBy] > b[sortBy]) return 1
+        return 0
+      })
     }
     if (sortDesc) {
-      filteredMN.reverse();
+      filteredMN.reverse()
     }
-    for (let i = (perPageDefault * (page - 1)); i < (perPageDefault * page); i += 1) {
+    for (
+      let i = perPageDefault * (page - 1);
+      i < perPageDefault * page;
+      i += 1
+    ) {
       if (typeof filteredMN[i] !== 'undefined') {
-        vracajARR.push(filteredMN[i]);
+        vracajARR.push(filteredMN[i])
       }
     }
 
-    return res.status(200).json({ returnArr: vracajARR, mnNumb: filteredMN.length });
+    return res
+      .status(200)
+      .json({ returnArr: vracajARR, mnNumb: filteredMN.length })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -178,13 +190,13 @@ const countMasterNodes = async (req, res, next) => {
       .callRpc('masternode_count')
       .call(true)
       .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json({ ok: true, nMasterNodes });
+        throw err
+      })
+    return res.status(200).json({ ok: true, nMasterNodes })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -252,50 +264,53 @@ const countMasterNodes = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const list = async (req, res, next) => {
   try {
-    const proposals = [];
-    const hiddenProposal = [];
-    const proposalResp = [];
+    const proposals = []
+    const hiddenProposal = []
+    const proposalResp = []
 
-    const listProposalsHidden = await admin.firestore()
+    const listProposalsHidden = await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle,array-callback-return
     listProposalsHidden._docs().map((doc) => {
       // eslint-disable-next-line no-underscore-dangle
-      hiddenProposal.push(doc._fieldsProto.hash.stringValue);
-    });
+      hiddenProposal.push(doc._fieldsProto.hash.stringValue)
+    })
 
     const gObjectList = await clientRPC
       .callRpc('gobject_list')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-restricted-syntax
     for (const gObjectListKey in gObjectList) {
       // eslint-disable-next-line no-prototype-builtins
       if (gObjectList.hasOwnProperty(gObjectListKey)) {
-        const key = gObjectList[gObjectListKey];
-        const bb = !JSON.parse(key.DataString)[0] ? JSON.parse(key.DataString) : JSON.parse(key.DataString)[0][1];
-        const { Hash } = key;
-        const ColHash = key.CollateralHash;
-        const { ObjectType } = key;
-        const { CreationTime } = key;
-        const { AbsoluteYesCount } = key;
-        const { YesCount } = key;
-        const { NoCount } = key;
-        const { AbstainCount } = key;
-        const { fBlockchainValidity } = key;
-        const { IsValidReason } = key;
-        const { fCachedValid } = key;
-        const { fCachedFunding } = key;
-        const { fCachedDelete } = key;
-        const { fCachedEndorsed } = key;
+        const key = gObjectList[gObjectListKey]
+        const bb = !JSON.parse(key.DataString)[0]
+          ? JSON.parse(key.DataString)
+          : JSON.parse(key.DataString)[0][1]
+        const { Hash } = key
+        const ColHash = key.CollateralHash
+        const { ObjectType } = key
+        const { CreationTime } = key
+        const { AbsoluteYesCount } = key
+        const { YesCount } = key
+        const { NoCount } = key
+        const { AbstainCount } = key
+        const { fBlockchainValidity } = key
+        const { IsValidReason } = key
+        const { fCachedValid } = key
+        const { fCachedFunding } = key
+        const { fCachedDelete } = key
+        const { fCachedEndorsed } = key
 
         const govList = {
           Hash,
@@ -312,25 +327,25 @@ const list = async (req, res, next) => {
           fCachedFunding,
           fCachedDelete,
           fCachedEndorsed,
-        };
+        }
 
-        proposals.push({ ...govList, ...bb });
-        proposals.sort((a, b) => ((a.AbsoluteYesCount < b.AbsoluteYesCount) ? 1 : -1));
+        proposals.push({ ...govList, ...bb })
+        proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount ? 1 : -1))
       }
     }
     // eslint-disable-next-line array-callback-return
     proposals.map((elem) => {
-      const hidden = hiddenProposal.find((el) => el === elem.Hash);
+      const hidden = hiddenProposal.find((el) => el === elem.Hash)
       if (typeof hidden === 'undefined') {
-        proposalResp.push(elem);
+        proposalResp.push(elem)
       }
-    });
+    })
 
-    return res.status(200).json(proposalResp);
+    return res.status(200).json(proposalResp)
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -421,14 +436,14 @@ const info = async (req, res, next) => {
       .callRpc('getblockchaininfo')
       .call(true)
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    return res.status(200).json({ ok: true, BlockChainInfo: info });
+    return res.status(200).json({ ok: true, BlockChainInfo: info })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -461,14 +476,14 @@ const getMiningInfo = async (req, res, next) => {
       .callRpc('getmininginfo')
       .call(true)
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    return res.status(200).json(getMiningInfo);
+    return res.status(200).json(getMiningInfo)
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -500,13 +515,13 @@ const getGovernanceInfo = async (req, res, next) => {
       .callRpc('getgovernanceinfo')
       .call()
       .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json(getGovernanceInfo);
+        throw err
+      })
+    return res.status(200).json(getGovernanceInfo)
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -531,32 +546,32 @@ const getSuperBlockBudget = async (req, res, next) => {
       .callRpc('getgovernanceinfo')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    const { lastsuperblock, nextsuperblock } = getGovernanceInfo;
+    const { lastsuperblock, nextsuperblock } = getGovernanceInfo
 
     const getSuperBlockBudgetLast = await clientRPC
       .callRpc('getsuperblockbudget', [lastsuperblock])
       .call(true)
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     const getSuperBlockBudgetNext = await clientRPC
       .callRpc('getsuperblockbudget', [nextsuperblock])
       .call(true)
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    const lbs = { block: lastsuperblock, budget: getSuperBlockBudgetLast };
-    const nbs = { block: nextsuperblock, budget: getSuperBlockBudgetNext };
-    return res.status(200).json({ ok: true, lbs, nbs });
+    const lbs = { block: lastsuperblock, budget: getSuperBlockBudgetLast }
+    const nbs = { block: nextsuperblock, budget: getSuperBlockBudgetNext }
+    return res.status(200).json({ ok: true, lbs, nbs })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -967,90 +982,88 @@ const getSuperBlockBudget = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const stats = async (req, res, next) => {
   try {
-    const hashGenesis = process.env.HASHGENESIS;
-    const mapData = {};
-    let highestMN = 0;
-    const mapFills = { defaultFill: '#e8e8e8' };
+    const hashGenesis = process.env.HASHGENESIS
+    const mapData = {}
+    let highestMN = 0
+    const mapFills = { defaultFill: '#e8e8e8' }
     const mnInfo = {
       totalMasternodes: 0,
       enabled: 0,
       sentinelPingExpired: 0,
       newStartRequired: 0,
       expired: 0,
-    };
+    }
 
     for (let i = 255; i >= 0; i -= 1) {
-      mapFills[`heat${i}`] = rgbToHex(0, 255 - i, 255);
+      mapFills[`heat${i}`] = rgbToHex(0, 255 - i, 255)
     }
-    const mns = await clientRPC.callRpc('masternode_list').call(true).catch((err) => {
-      throw err;
-    });
+    const mns = await clientRPC
+      .callRpc('masternode_list')
+      .call(true)
+      .catch((err) => {
+        throw err
+      })
 
-    mnInfo.totalMasternodes = Object.keys(mns).length;
+    mnInfo.totalMasternodes = Object.keys(mns).length
     Object.keys(mns).forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(mns, key)) {
         if (mns[key].status === 'ENABLED') {
-          mnInfo.enabled += 1;
+          mnInfo.enabled += 1
         } else if (mns[key].status === 'SENTINEL_PING_EXPIRED') {
-          mnInfo.sentinelPingExpired += 1;
+          mnInfo.sentinelPingExpired += 1
         } else if (mns[key].status === 'NEW_START_REQUIRED') {
-          mnInfo.newStartRequired += 1;
+          mnInfo.newStartRequired += 1
         } else if (mns[key].status === 'EXPIRED') {
-          mnInfo.expired += 1;
+          mnInfo.expired += 1
         }
       }
       if (geoip.lookup(mns[key].address.split(':')[0]) != null) {
-        const iso = geoip.lookup(mns[key].address.split(':')[0]).country;
-        const alpha3 = countries.alpha2ToAlpha3(iso);
+        const iso = geoip.lookup(mns[key].address.split(':')[0]).country
+        const alpha3 = countries.alpha2ToAlpha3(iso)
         if (mapData[alpha3] === undefined) {
           mapData[alpha3] = {
             masternodes: 1,
-          };
+          }
         } else {
-          mapData[alpha3].masternodes += 1;
+          mapData[alpha3].masternodes += 1
         }
       }
-    });
+    })
 
     for (const country in mapData) {
       if (mapData[country].masternodes > highestMN) {
-        highestMN = mapData[country].masternodes;
+        highestMN = mapData[country].masternodes
       }
     }
     for (const country in mapData) {
-      const heatLevel = Math.round((255 * mapData[country].masternodes) / highestMN); // equation
-      mapData[country].fillKey = `heat${heatLevel}`;
+      const heatLevel = Math.round(
+        (255 * mapData[country].masternodes) / highestMN,
+      ) // equation
+      mapData[country].fillKey = `heat${heatLevel}`
     }
     // Get Pricing for Syscoin
 
     const {
-      data:
-        {
-          market_data:
-            {
-              current_price:
-                {
-                  usd: sysUsd,
-                  btc: sysBtc,
-                  total_supply: totalSupply,
-                },
-              circulating_supply: circulatingSupply,
-              market_cap: {
-                usd: marketCap,
-                btc: marketCapBtc,
-              },
-              total_volume: {
-                usd: volume,
-                btc: volumeBtc,
-              },
-              price_change_percentage_24h: priceChange,
-            },
+      data: {
+        market_data: {
+          current_price: {
+            usd: sysUsd,
+            btc: sysBtc,
+            total_supply: totalSupply,
+          },
+          circulating_supply: circulatingSupply,
+          market_cap: { usd: marketCap, btc: marketCapBtc },
+          total_volume: { usd: volume, btc: volumeBtc },
+          price_change_percentage_24h: priceChange,
         },
+      },
     } = await axios
-      .get('https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true')
+      .get(
+        'https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true',
+      )
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // Get Blockchain Stats
     const {
@@ -1058,45 +1071,60 @@ const stats = async (req, res, next) => {
       subversion: subVersion,
       protocolversion: protocol,
       connections: connect,
-    } = await clientRPC.callRpc('getnetworkinfo')
+    } = await clientRPC
+      .callRpc('getnetworkinfo')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // Get Genesis Block
-    const { time: genesisSeconds } = await clientRPC.callRpc('getblock', [hashGenesis])
+    const { time: genesisSeconds } = await clientRPC
+      .callRpc('getblock', [hashGenesis])
       .call()
       .catch((err) => {
-        throw err;
-      });
-    const date = moment(genesisSeconds * 1000).format('MMMM Do YYYY, h:mm:ss a');
+        throw err
+      })
+    const date = moment(genesisSeconds * 1000).format('MMMM Do YYYY, h:mm:ss a')
 
     // Get Current Block
-    const block = await clientRPC.callRpc('getblockcount').call().catch((err) => {
-      throw err;
-    });
+    const block = await clientRPC
+      .callRpc('getblockcount')
+      .call()
+      .catch((err) => {
+        throw err
+      })
 
-    const getBlockHash = await clientRPC.callRpc('getblockhash', [block]).call().catch((err) => {
-      throw err;
-    });
+    const getBlockHash = await clientRPC
+      .callRpc('getblockhash', [block])
+      .call()
+      .catch((err) => {
+        throw err
+      })
 
-    const getBlockData = await clientRPC.callRpc('getblock', [getBlockHash]).call().catch((err) => {
-      throw err;
-    });
-    const nowTime = getBlockData.time;
+    const getBlockData = await clientRPC
+      .callRpc('getblock', [getBlockHash])
+      .call()
+      .catch((err) => {
+        throw err
+      })
+    const nowTime = getBlockData.time
 
     // Get 1440 Blocks Ago
-    const oneDays = 43800;
-    const blockOneDayAgo = block - oneDays;
-    const getBlockHashDayAgo = await clientRPC.callRpc('getblockhash', [blockOneDayAgo]).call();
-    const getBlockDataDayAgo = await clientRPC.callRpc('getblock', [getBlockHashDayAgo]).call();
-    const oneDayAgoTime = getBlockDataDayAgo.time;
+    const oneDays = 43800
+    const blockOneDayAgo = block - oneDays
+    const getBlockHashDayAgo = await clientRPC
+      .callRpc('getblockhash', [blockOneDayAgo])
+      .call()
+    const getBlockDataDayAgo = await clientRPC
+      .callRpc('getblock', [getBlockHashDayAgo])
+      .call()
+    const oneDayAgoTime = getBlockDataDayAgo.time
 
     // Calculate Time
-    const diffTime = nowTime - oneDayAgoTime;
-    const blockTimeSec = diffTime * 1000;
-    const avgBlockTime = (blockTimeSec / 43800);
+    const diffTime = nowTime - oneDayAgoTime
+    const blockTimeSec = diffTime * 1000
+    const avgBlockTime = blockTimeSec / 43800
 
     // Get Governance Info
     const {
@@ -1104,180 +1132,261 @@ const stats = async (req, res, next) => {
       nextsuperblock: nextSuperBlock,
       proposalfee: proposalFee,
       nextsuperblock: sbNow,
-    } = await clientRPC.callRpc('getgovernanceinfo').call().catch((err) => {
-      throw err;
-    });
-
-    const budget = await clientRPC.callRpc('getsuperblockbudget', [nextSuperBlock])
+    } = await clientRPC
+      .callRpc('getgovernanceinfo')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
+
+    const budget = await clientRPC
+      .callRpc('getsuperblockbudget', [nextSuperBlock])
+      .call()
+      .catch((err) => {
+        throw err
+      })
 
     // Get Date of Next SuperBlock
-    const diffBlock = nextSuperBlock - block;
-    const workOutTime = (diffBlock * avgBlockTime);
-    const currentDate = Date.now();
-    const superBlockDate = currentDate + workOutTime;
-    const superBlockNextDate = moment(superBlockDate).format('MMMM Do YYYY, h:mm:ss a');
+    const diffBlock = nextSuperBlock - block
+    const workOutTime = diffBlock * avgBlockTime
+    const currentDate = Date.now()
+    const superBlockDate = currentDate + workOutTime
+    const superBlockNextDate = moment(superBlockDate).format(
+      'MMMM Do YYYY, h:mm:ss a',
+    )
 
     // Get Date of Voting Deadline
-    const deadlineBlock = 4320;
-    const votingDeadline = nextSuperBlock - deadlineBlock;
-    const voteDeadTime = votingDeadline - block;
-    const votingTime = voteDeadTime * avgBlockTime;
-    const voteDate = currentDate + votingTime;
-    const votingDeadlineDate = moment(voteDate).format('MMMM Do YYYY, h:mm:ss a');
+    const deadlineBlock = 4320
+    const votingDeadline = nextSuperBlock - deadlineBlock
+    const voteDeadTime = votingDeadline - block
+    const votingTime = voteDeadTime * avgBlockTime
+    const voteDate = currentDate + votingTime
+    const votingDeadlineDate = moment(voteDate).format(
+      'MMMM Do YYYY, h:mm:ss a',
+    )
 
     // Get Next 5 Superblocks
-    const sbCounter = 43800;
-    const sb1 = sbNow + sbCounter;
-    const sb2 = sb1 + sbCounter;
-    const sb3 = sb2 + sbCounter;
-    const sb4 = sb3 + sbCounter;
-    const sb5 = sb4 + sbCounter;
+    const sbCounter = 43800
+    const sb1 = sbNow + sbCounter
+    const sb2 = sb1 + sbCounter
+    const sb3 = sb2 + sbCounter
+    const sb4 = sb3 + sbCounter
+    const sb5 = sb4 + sbCounter
 
     // Get Next 5 Superblocks Date
-    const sb1Diff = sb1 - block;
-    const sb1DateWork = sb1Diff * avgBlockTime;
-    const sb1Date = currentDate + sb1DateWork;
-    const sb1EstDate = moment(sb1Date).format('MMMM Do YYYY');
+    const sb1Diff = sb1 - block
+    const sb1DateWork = sb1Diff * avgBlockTime
+    const sb1Date = currentDate + sb1DateWork
+    const sb1EstDate = moment(sb1Date).format('MMMM Do YYYY')
 
-    const sb2Diff = sb2 - block;
-    const sb2DateWork = sb2Diff * avgBlockTime;
-    const sb2Date = currentDate + sb2DateWork;
-    const sb2EstDate = moment(sb2Date).format('MMMM Do YYYY');
+    const sb2Diff = sb2 - block
+    const sb2DateWork = sb2Diff * avgBlockTime
+    const sb2Date = currentDate + sb2DateWork
+    const sb2EstDate = moment(sb2Date).format('MMMM Do YYYY')
 
-    const sb3Diff = sb3 - block;
-    const sb3DateWork = sb3Diff * avgBlockTime;
-    const sb3Date = currentDate + sb3DateWork;
-    const sb3EstDate = moment(sb3Date).format('MMMM Do YYYY');
+    const sb3Diff = sb3 - block
+    const sb3DateWork = sb3Diff * avgBlockTime
+    const sb3Date = currentDate + sb3DateWork
+    const sb3EstDate = moment(sb3Date).format('MMMM Do YYYY')
 
-    const sb4Diff = sb4 - block;
-    const sb4DateWork = sb4Diff * avgBlockTime;
-    const sb4Date = currentDate + sb4DateWork;
-    const sb4EstDate = moment(sb4Date).format('MMMM Do YYYY');
+    const sb4Diff = sb4 - block
+    const sb4DateWork = sb4Diff * avgBlockTime
+    const sb4Date = currentDate + sb4DateWork
+    const sb4EstDate = moment(sb4Date).format('MMMM Do YYYY')
 
-    const sb5Diff = sb5 - block;
-    const sb5DateWork = sb5Diff * avgBlockTime;
-    const sb5Date = currentDate + sb5DateWork;
-    const sb5EstDate = moment(sb5Date).format('MMMM Do YYYY');
+    const sb5Diff = sb5 - block
+    const sb5DateWork = sb5Diff * avgBlockTime
+    const sb5Date = currentDate + sb5DateWork
+    const sb5EstDate = moment(sb5Date).format('MMMM Do YYYY')
 
     // Get Next 5 Superblocks Amounts
-    const sb1Budget = await clientRPC.callRpc('getsuperblockbudget', [sb1]).call().catch((err) => {
-      throw err;
-    });
-    const sb2Budget = await clientRPC.callRpc('getsuperblockbudget', [sb2]).call().catch((err) => {
-      throw err;
-    });
-    const sb3Budget = await clientRPC.callRpc('getsuperblockbudget', [sb3]).call().catch((err) => {
-      throw err;
-    });
-    const sb4Budget = await clientRPC.callRpc('getsuperblockbudget', [sb4]).call().catch((err) => {
-      throw err;
-    });
-    const sb5Budget = await clientRPC.callRpc('getsuperblockbudget', [sb5]).call().catch((err) => {
-      throw err;
-    });
+    const sb1Budget = await clientRPC
+      .callRpc('getsuperblockbudget', [sb1])
+      .call()
+      .catch((err) => {
+        throw err
+      })
+    const sb2Budget = await clientRPC
+      .callRpc('getsuperblockbudget', [sb2])
+      .call()
+      .catch((err) => {
+        throw err
+      })
+    const sb3Budget = await clientRPC
+      .callRpc('getsuperblockbudget', [sb3])
+      .call()
+      .catch((err) => {
+        throw err
+      })
+    const sb4Budget = await clientRPC
+      .callRpc('getsuperblockbudget', [sb4])
+      .call()
+      .catch((err) => {
+        throw err
+      })
+    const sb5Budget = await clientRPC
+      .callRpc('getsuperblockbudget', [sb5])
+      .call()
+      .catch((err) => {
+        throw err
+      })
 
-    const rewardElig = (mnInfo.enabled * 4) / 60;
-    const avgPayoutFrequency = mnInfo.enabled / 60;
-    const firstPay = rewardElig + avgPayoutFrequency;
-    const reqCoin = 100000;
-    const mnUsd = reqCoin * sysUsd;
-    const mnBtc = reqCoin * sysBtc;
-    const supply = circulatingSupply;
-    const coinsLocked = mnInfo.totalMasternodes * 100000;
-    const coinsLockedPercent = (mnInfo.totalMasternodes * 100000) / supply;
-    const days = 3600000;
+    const rewardElig = (mnInfo.enabled * 4) / 60
+    const avgPayoutFrequency = mnInfo.enabled / 60
+    const firstPay = rewardElig + avgPayoutFrequency
+    const reqCoin = 100000
+    const mnUsd = reqCoin * sysUsd
+    const mnBtc = reqCoin * sysBtc
+    const supply = circulatingSupply
+    const coinsLocked = mnInfo.totalMasternodes * 100000
+    const coinsLockedPercent = (mnInfo.totalMasternodes * 100000) / supply
+    const days = 3600000
 
     // SB Stats
-    const sbTotal = 43800;
+    const sbTotal = 43800
 
     // Income stats starts
-    const deflation = 0.95;
-    const firstReward = 25.9875;
-    const oneYearIncreaseSen = 1.35;
-    const twoYearIncreaseSen = 2;
-    const oneDay = 365;
-    const oneWeek = 52;
-    const oneMonth = 12;
-    const rewardPerBlock = deflation * firstReward;
-    const rewardPerBlockTwo = rewardPerBlock * deflation;
-    const annualTotalRewards = rewardPerBlock * 60 * 24 * 365;
+    const deflation = 0.95
+    const firstReward = 25.9875
+    const oneYearIncreaseSen = 1.35
+    const twoYearIncreaseSen = 2
+    const oneDay = 365
+    const oneWeek = 52
+    const oneMonth = 12
+    const rewardPerBlock = deflation * firstReward
+    const rewardPerBlockTwo = rewardPerBlock * deflation
+    const annualTotalRewards = rewardPerBlock * 60 * 24 * 365
 
-    const avgRewardYearly = annualTotalRewards / mnInfo.enabled;
+    const avgRewardYearly = annualTotalRewards / mnInfo.enabled
 
     // One Year Seniority Calss
-    const oneSenRewardPerBlock = rewardPerBlock * oneYearIncreaseSen;
-    const oneSenAnnualTotalRewards = oneSenRewardPerBlock * 60 * 24 * 365;
-    const oneAvgRewardYearlySen = oneSenAnnualTotalRewards / mnInfo.enabled;
+    const oneSenRewardPerBlock = rewardPerBlock * oneYearIncreaseSen
+    const oneSenAnnualTotalRewards = oneSenRewardPerBlock * 60 * 24 * 365
+    const oneAvgRewardYearlySen = oneSenAnnualTotalRewards / mnInfo.enabled
 
     // Two Year Seniority Calcs
-    const twoSenRewardPerBlock = rewardPerBlockTwo * twoYearIncreaseSen;
-    const twoSenAnnualTotalRewards = twoSenRewardPerBlock * 60 * 24 * 365;
-    const twoAvgRewardYearlySen = twoSenAnnualTotalRewards / mnInfo.enabled;
+    const twoSenRewardPerBlock = rewardPerBlockTwo * twoYearIncreaseSen
+    const twoSenAnnualTotalRewards = twoSenRewardPerBlock * 60 * 24 * 365
+    const twoAvgRewardYearlySen = twoSenAnnualTotalRewards / mnInfo.enabled
 
     // ROI Calcs
-    const roi = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / reqCoin;
-    const roiDays = (100000 / avgRewardYearly) * 365;
+    const roi = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / reqCoin
+    const roiDays = (100000 / avgRewardYearly) * 365
 
     // Without Seniority
     // USD
-    const usdDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysUsd;
-    const usdWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek) * sysUsd;
-    const usdMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth) * sysUsd;
-    const usdYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysUsd;
+    const usdDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysUsd
+    const usdWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek)
+      * sysUsd
+    const usdMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth)
+      * sysUsd
+    const usdYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysUsd
 
     // BTC
-    const btcDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysBtc;
-    const btcWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek) * sysBtc;
-    const btcMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth) * sysBtc;
-    const btcYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysBtc;
+    const btcDaily = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay) * sysBtc
+    const btcWeekly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek)
+      * sysBtc
+    const btcMonthly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth)
+      * sysBtc
+    const btcYearly = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) * sysBtc
 
     // SYS
-    const sysDaily = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneDay;
-    const sysWeekly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneWeek;
-    const sysMonthly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0 / oneMonth;
-    const sysYearly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0;
+    const sysDaily = Number.isFinite(avgRewardYearly)
+      ? avgRewardYearly
+      : 0 / oneDay
+    const sysWeekly = Number.isFinite(avgRewardYearly)
+      ? avgRewardYearly
+      : 0 / oneWeek
+    const sysMonthly = Number.isFinite(avgRewardYearly)
+      ? avgRewardYearly
+      : 0 / oneMonth
+    const sysYearly = Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0
 
     // With One Seniority
     // USD
-    const usdDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay) * sysUsd;
-    const usdWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek) * sysUsd;
-    const usdMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth) * sysUsd;
-    const usdYearlyOne = Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 * sysUsd;
+    const usdDailyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneDay) * sysUsd
+    const usdWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneWeek) * sysUsd
+    const usdMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneMonth) * sysUsd
+    const usdYearlyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 * sysUsd
 
     // BTC
-    const btcDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay) * sysBtc;
-    const btcWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek) * sysBtc;
-    const btcMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth) * sysBtc;
-    const btcYearlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 * sysBtc);
+    const btcDailyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneDay) * sysBtc
+    const btcWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneWeek) * sysBtc
+    const btcMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneMonth) * sysBtc
+    const btcYearlyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 * sysBtc
 
     // SYS
-    const sysDailyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneDay);
-    const sysWeeklyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneWeek);
-    const sysMonthlyOne = (Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0 / oneMonth);
-    const sysYearlyOne = Number.isFinite(oneAvgRewardYearlySen) ? oneAvgRewardYearlySen : 0;
+    const sysDailyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneDay
+    const sysWeeklyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneWeek
+    const sysMonthlyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0 / oneMonth
+    const sysYearlyOne = Number.isFinite(oneAvgRewardYearlySen)
+      ? oneAvgRewardYearlySen
+      : 0
 
     // With Two Seniority
     // USD
-    const usdDailyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay) * sysUsd;
-    const usdWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek) * sysUsd;
-    const usdMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth) * sysUsd;
-    const usdYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 * sysUsd;
+    const usdDailyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneDay) * sysUsd
+    const usdWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneWeek) * sysUsd
+    const usdMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneMonth) * sysUsd
+    const usdYearlyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 * sysUsd
 
     // BTC
-    const btcDailyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay) * sysBtc;
-    const btcWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek) * sysBtc;
-    const btcMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth) * sysBtc;
-    const btcYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 * sysBtc;
+    const btcDailyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneDay) * sysBtc
+    const btcWeeklyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneWeek) * sysBtc
+    const btcMonthlyTwo = (Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneMonth) * sysBtc
+    const btcYearlyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 * sysBtc
 
     // SYS
-    const sysDailyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneDay;
-    const sysWeeklyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneWeek;
-    const sysMonthlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0 / oneMonth;
-    const sysYearlyTwo = Number.isFinite(twoAvgRewardYearlySen) ? twoAvgRewardYearlySen : 0;
+    const sysDailyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneDay
+    const sysWeeklyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneWeek
+    const sysMonthlyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0 / oneMonth
+    const sysYearlyTwo = Number.isFinite(twoAvgRewardYearlySen)
+      ? twoAvgRewardYearlySen
+      : 0
 
     return res.status(200).json({
       stats: {
@@ -1285,14 +1394,18 @@ const stats = async (req, res, next) => {
           total: numeral(mnInfo.totalMasternodes).format('0,0'),
           enabled: numeral(mnInfo.enabled).format('0,0'),
           new_start_required: numeral(mnInfo.newStartRequired).format('0,0'),
-          sentinel_ping_expired: numeral(mnInfo.sentinelPingExpired).format('0,0'),
+          sentinel_ping_expired: numeral(mnInfo.sentinelPingExpired).format(
+            '0,0',
+          ),
           total_locked: numeral(coinsLocked).format('0,0.00'),
           coins_percent_locked: `${Number(coinsLockedPercent * 100).toFixed(2)}%`,
           current_supply: numeral(supply).format('0,0.00'),
           collateral_req: numeral(reqCoin).format('0,0'),
           masternode_price_usd: numeral(mnUsd).format('0,0.00'),
           masternode_price_btc: numeral(mnBtc).format('0,0.00000000'),
-          roi: `${Number(roi * 100).toFixed(2)}%` + ` // ${Math.ceil(roiDays)} Days`,
+          roi:
+            `${Number(roi * 100).toFixed(2)}%`
+            + ` // ${Math.ceil(roiDays)} Days`,
           payout_frequency: ms(avgPayoutFrequency * days),
           first_pay: ms(firstPay * days),
           reward_eligble: ms(rewardElig * days),
@@ -1406,11 +1519,11 @@ const stats = async (req, res, next) => {
       },
       mapData,
       mapFills,
-    });
+    })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -1433,19 +1546,25 @@ const stats = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const usersApp = async (req, res, next) => {
   try {
-    const users = await admin.firestore()
+    const users = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_INFO)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle
-    return res.status(200).json({ ok: true, users: Number(users._docs()[0]._fieldsProto.nUsers.integerValue) });
+    return res
+      .status(200)
+      .json({
+        ok: true,
+        users: Number(users._docs()[0]._fieldsProto.nUsers.integerValue),
+      })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 module.exports = {
   masterNodes,
   stats,
@@ -1456,4 +1575,4 @@ module.exports = {
   getGovernanceInfo,
   getSuperBlockBudget,
   usersApp,
-};
+}

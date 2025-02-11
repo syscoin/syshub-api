@@ -1,5 +1,5 @@
-const { clientRPC, rpcServices, admin } = require('../utils/config');
-const { strToHex } = require('../utils/hex');
+const { clientRPC, rpcServices, admin } = require('../utils/config')
+const { strToHex } = require('../utils/hex')
 
 /**
  * @function
@@ -42,9 +42,10 @@ const check = async (req, res, next) => {
       paymentAddress,
       paymentAmount,
       url,
-    } = req.body;
+    } = req.body
     // eslint-disable-next-line max-len
-    if (!type
+    if (
+      !type
       || !name
       || !title
       || !nPayment
@@ -52,62 +53,71 @@ const check = async (req, res, next) => {
       || !startEpoch
       || !endEpoch
       || !paymentAddress
-      || !paymentAmount) {
+      || !paymentAmount
+    ) {
       return res.status(406).json({
         ok: false,
         messageL: 'Required fields',
-      });
+      })
     }
     if (/\s/.test(name)) {
       return res.status(406).json({
         ok: false,
         message: 'Invalid name proposal, name contains invalid characters',
-      });
+      })
     }
 
     const objectProposal = [
-      ['proposal', {
-        type: Number(type),
-        name,
-        title,
-        description,
-        nPayment: Number(nPayment),
-        first_epoch: Number(firstEpoch),
-        start_epoch: Number(startEpoch),
-        end_epoch: Number(endEpoch),
-        payment_address: paymentAddress,
-        payment_amount: Number(paymentAmount),
-        url: (typeof url !== 'undefined') ? url : 'empty',
-      },
-      ]];
-    const hexProposal = strToHex(objectProposal[0][1]);
+      [
+        'proposal',
+        {
+          type: Number(type),
+          name,
+          title,
+          description,
+          nPayment: Number(nPayment),
+          first_epoch: Number(firstEpoch),
+          start_epoch: Number(startEpoch),
+          end_epoch: Number(endEpoch),
+          payment_address: paymentAddress,
+          payment_amount: Number(paymentAmount),
+          url: typeof url !== 'undefined' ? url : 'empty',
+        },
+      ],
+    ]
+    const hexProposal = strToHex(objectProposal[0][1])
 
     const verifyHex = await clientRPC
       .callRpc('gobject_check', [hexProposal])
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     if (verifyHex && Object.values(verifyHex)[0] === 'OK') {
-      return res.status(200).json({ ok: true, message: 'Proposal OK' });
+      return res.status(200).json({ ok: true, message: 'Proposal OK' })
     }
   } catch (err) {
-    if (err.message === 'Invalid proposal data, error messages:data exceeds 512 characters;JSON parsing error;') {
+    if (
+      err.message
+      === 'Invalid proposal data, error messages:data exceeds 512 characters;JSON parsing error;'
+    ) {
       return res.status(400).json({
         ok: false,
         message: 'Invalid Proposal',
-      });
+      })
     }
-    if (err.message === 'Invalid object type, only proposals can be validated') {
+    if (
+      err.message === 'Invalid object type, only proposals can be validated'
+    ) {
       return res.status(400).json({
         ok: false,
         message: 'Invalid Proposal',
-      });
+      })
     }
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -139,7 +149,7 @@ const check = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const prepare = async (req, res, next) => {
   try {
-    const proposals = [];
+    const proposals = []
     const {
       type,
       name,
@@ -152,9 +162,10 @@ const prepare = async (req, res, next) => {
       paymentAddress,
       paymentAmount,
       url,
-    } = req.body;
+    } = req.body
     // eslint-disable-next-line max-len
-    if (!type
+    if (
+      !type
       || !name
       || !title
       || !nPayment
@@ -162,41 +173,44 @@ const prepare = async (req, res, next) => {
       || !startEpoch
       || !endEpoch
       || !paymentAddress
-      || !paymentAmount) {
+      || !paymentAmount
+    ) {
       return res.status(406).json({
         ok: false,
         messageL: 'Required fields',
-      });
+      })
     }
     if (/\s/.test(name)) {
       return res.status(406).json({
         ok: false,
         message: 'Invalid name proposal, name contains invalid characters',
-      });
+      })
     }
-    const user = await admin.firestore()
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
     if (user.id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
 
     const objectProposal = [
-      ['proposal',
+      [
+        'proposal',
         {
           type: Number(type),
           name,
@@ -208,18 +222,19 @@ const prepare = async (req, res, next) => {
           end_epoch: Number(endEpoch),
           payment_address: paymentAddress,
           payment_amount: Number(paymentAmount),
-          url: (typeof url !== 'undefined') ? url : 'empty',
-        }],
-    ];
+          url: typeof url !== 'undefined' ? url : 'empty',
+        },
+      ],
+    ]
 
-    const hexProposal = strToHex(objectProposal[0][1]);
+    const hexProposal = strToHex(objectProposal[0][1])
 
     const verifyHex = await clientRPC
       .callRpc('gobject_check', [hexProposal])
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     if (verifyHex && Object.values(verifyHex)[0] === 'OK') {
       const prepareObjectProposal = {
@@ -227,13 +242,14 @@ const prepare = async (req, res, next) => {
         revision: '1',
         time: Math.floor(new Date().getTime() / 1000),
         dataHex: hexProposal,
-      };
+      }
 
       const {
         parentHash, revision, time, dataHex,
-      } = prepareObjectProposal;
-      const command = `gobject_prepare ${parentHash} ${revision} ${time} ${dataHex}`;
-      const proposalResp = await admin.firestore()
+      } = prepareObjectProposal
+      const command = `gobject_prepare ${parentHash} ${revision} ${time} ${dataHex}`
+      const proposalResp = await admin
+        .firestore()
         .collection(process.env.COLLECTION_NAME_PROPOSAL)
         .add({
           type: Number(type),
@@ -246,36 +262,40 @@ const prepare = async (req, res, next) => {
           end_epoch: Number(endEpoch),
           payment_address: paymentAddress,
           payment_amount: Number(paymentAmount),
-          url: (typeof url !== 'undefined') ? url : 'empty',
+          url: typeof url !== 'undefined' ? url : 'empty',
           prepareObjectProposal,
           prepareCommand: command,
           complete: false,
-        }).catch((err) => {
-          throw err;
-        });
+        })
+        .catch((err) => {
+          throw err
+        })
       // eslint-disable-next-line no-underscore-dangle
       if (user._fieldsProto.proposalList) {
         // eslint-disable-next-line no-underscore-dangle,array-callback-return
         user._fieldsProto.proposalList.arrayValue.values.map((proposal) => {
-          proposals.push(proposal.stringValue);
-        });
+          proposals.push(proposal.stringValue)
+        })
       }
       // eslint-disable-next-line no-underscore-dangle
-      proposals.push(proposalResp._path.id);
-      await admin.firestore()
+      proposals.push(proposalResp._path.id)
+      await admin
+        .firestore()
         .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
         .update('proposalList', proposals)
         .catch((err) => {
-          throw err;
-        });
+          throw err
+        })
       // eslint-disable-next-line no-underscore-dangle
-      return res.status(200).json({ ok: true, command, uid: proposalResp._path.id });
+      return res
+        .status(200)
+        .json({ ok: true, command, uid: proposalResp._path.id })
     }
-    return res.status(400).json({ ok: false, message: 'hex Invalid' });
+    return res.status(400).json({ ok: false, message: 'hex Invalid' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -301,71 +321,73 @@ const prepare = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const submit = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const {
       parentHash, revision, time, dataHex, txId,
-    } = req.body;
+    } = req.body
     if (!parentHash || !revision || !time || !dataHex || !txId) {
       return res.status(406).json({
         ok: false,
         message: 'Required fields',
-      });
+      })
     }
-    const user = await admin.firestore()
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
 
     if (user.id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
 
-    const commandSubmit = `gobject_submit ${parentHash} ${revision} ${time} ${dataHex} ${txId}`.trim();
+    const commandSubmit = `gobject_submit ${parentHash} ${revision} ${time} ${dataHex} ${txId}`.trim()
 
     const verifyHex = await clientRPC
       .callRpc('gobject_check', [dataHex])
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     if (verifyHex && Object.values(verifyHex)[0] === 'OK') {
       await clientRPC
         .callRpc('gobject_check', [dataHex])
         .call()
         .catch((err) => {
-          throw err;
-        });
+          throw err
+        })
 
-      await admin.firestore()
+      await admin
+        .firestore()
         .collection(process.env.COLLECTION_NAME_PROPOSAL)
         .doc(id)
         .update({ commandSubmit })
         .catch((err) => {
-          throw err;
-        });
+          throw err
+        })
 
-      return res.status(200).json({ ok: true, commandSubmit });
+      return res.status(200).json({ ok: true, commandSubmit })
     }
-    return res.status(400).json({ ok: false, message: 'hex Invalid' });
+    return res.status(400).json({ ok: false, message: 'hex Invalid' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -392,42 +414,45 @@ const submit = async (req, res, next) => {
 const vote = async (req, res, next) => {
   try {
     const {
-      txHash,
-      txIndex,
-      governanceHash,
-      signal,
-      vote,
-      time,
-      signature,
-    } = req.body;
+      txHash, txIndex, governanceHash, signal, vote, time, signature,
+    } = req.body
 
-    if (!txHash || !txIndex || !governanceHash || !signal || !vote || !time || !signature) {
+    if (
+      !txHash
+      || !txIndex
+      || !governanceHash
+      || !signal
+      || !vote
+      || !time
+      || !signature
+    ) {
       return res.status(406).json({
         ok: false,
         message: 'Required fields',
-      });
+      })
     }
-    const user = await admin.firestore()
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
 
     if (user.id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
     const voteRaw = await new Promise((resolve, reject) => {
       rpcServices(clientRPC.callRpc)
@@ -442,39 +467,61 @@ const vote = async (req, res, next) => {
         )
         .call(true)
         .then(({ data }) => {
-          resolve(data);
+          resolve(data)
         })
         .catch((err) => {
-          reject(new Error(err));
-        });
-    });
-    return res.status(200).json(voteRaw);
+          reject(new Error(err))
+        })
+    })
+    return res.status(200).json(voteRaw)
   } catch (err) {
-    if (err.message.split(':')[1].trim() === 'Failure to find masternode in list') {
-      return res.status(400).json({ ok: false, message: 'Failure to find masterNode in list' });
+    if (
+      err.message.split(':')[1].trim() === 'Failure to find masternode in list'
+    ) {
+      return res
+        .status(400)
+        .json({ ok: false, message: 'Failure to find masterNode in list' })
     }
-    if (err.message.split(':')[2].trim() === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR') {
+    if (
+      err.message.split(':')[2].trim()
+      === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR'
+    ) {
       return res.status(400).json({
         ok: false,
         // eslint-disable-next-line max-len
-        message: 'To vote on this proposal you must wait an hour then you can vote again, if you want to vote on another proposal where you have not voted, you can.',
-      });
+        message:
+          'To vote on this proposal you must wait an hour then you can vote again, if you want to vote on another proposal where you have not voted, you can.',
+      })
     }
     if (err.message.split(':')[1].trim() === 'Error voting') {
-      return res.status(400).json({ ok: false, message: 'Invalid proposal hash. Please check' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'Invalid proposal hash. Please check' })
     }
-    if (err.message.split(':')[1].trim() === 'mn tx hash must be hexadecimal string') {
-      return res.status(400).json({ ok: false, message: 'Invalid txId. Please check' });
+    if (
+      err.message.split(':')[1].trim()
+      === 'mn tx hash must be hexadecimal string'
+    ) {
+      return res
+        .status(400)
+        .json({ ok: false, message: 'Invalid txId. Please check' })
     }
     if (err.message.split(':')[1].trim() === 'Failure to verify vote.') {
-      return res.status(400).json({ ok: false, message: 'The vote cannot be verified' });
+      return res
+        .status(400)
+        .json({ ok: false, message: 'The vote cannot be verified' })
     }
-    if (err.message.split(':')[1].trim().split('64')[0].trim() === 'mn tx hash must be of length') {
-      return res.status(400).json({ ok: false, message: 'Invalid txId. Please check' });
+    if (
+      err.message.split(':')[1].trim().split('64')[0].trim()
+      === 'mn tx hash must be of length'
+    ) {
+      return res
+        .status(400)
+        .json({ ok: false, message: 'Invalid txId. Please check' })
     }
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -493,73 +540,101 @@ const vote = async (req, res, next) => {
 
 const getProposalsPendingByUser = async (req, res, next) => {
   try {
-    const proposalData = {};
-    await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get()
+    const proposalData = {}
+    await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
       // eslint-disable-next-line consistent-return
       .then((user) => {
         // eslint-disable-next-line no-underscore-dangle
         if (user._fieldsProto.proposalList) {
           // eslint-disable-next-line no-underscore-dangle,max-len
-          Promise.all(user._fieldsProto.proposalList.arrayValue.values.map(async (proposal) => new Promise((resolve, reject) => {
-            admin.firestore()
-              .collection(process.env.COLLECTION_NAME_PROPOSAL)
-              .doc(proposal.stringValue)
-              .get()
-              .then((resp) => {
-                resolve(resp);
-              })
-              .catch((err) => {
-                reject(err);
-              });
-          }))).then((elements) => {
-            // eslint-disable-next-line no-underscore-dangle
-            const proposalNoComplete = elements.filter((elem) => elem._fieldsProto.complete.booleanValue === false);
-            // eslint-disable-next-line prefer-spread,no-underscore-dangle
-            const proposalReciente = Math.max.apply(Math, proposalNoComplete.map((o) => o._createTime.nanoseconds));
-            // eslint-disable-next-line no-underscore-dangle,max-len
-            const currentNoCompleteProposal = proposalNoComplete.find((proposal) => proposal._createTime.nanoseconds === proposalReciente);
+          Promise.all(
+            user._fieldsProto.proposalList.arrayValue.values.map(
+              async (proposal) => new Promise((resolve, reject) => {
+                admin
+                  .firestore()
+                  .collection(process.env.COLLECTION_NAME_PROPOSAL)
+                  .doc(proposal.stringValue)
+                  .get()
+                  .then((resp) => {
+                    resolve(resp)
+                  })
+                  .catch((err) => {
+                    reject(err)
+                  })
+              }),
+            ),
+          )
+            .then((elements) => {
+              // eslint-disable-next-line no-underscore-dangle
+              const proposalNoComplete = elements.filter(
+                (elem) => elem._fieldsProto.complete.booleanValue === false,
+              )
+              // eslint-disable-next-line prefer-spread,no-underscore-dangle
+              const proposalReciente = Math.max.apply(
+                Math,
+                proposalNoComplete.map((o) => o._createTime.nanoseconds),
+              )
+              // eslint-disable-next-line no-underscore-dangle,max-len
+              const currentNoCompleteProposal = proposalNoComplete.find(
+                (proposal) => proposal._createTime.nanoseconds === proposalReciente,
+              )
 
-            if (typeof currentNoCompleteProposal === 'undefined') {
-              return res.status(204).json({
-                oK: false,
-                message: 'there are no pending proposals',
-              });
-            }
+              if (typeof currentNoCompleteProposal === 'undefined') {
+                return res.status(204).json({
+                  oK: false,
+                  message: 'there are no pending proposals',
+                })
+              }
 
-            // eslint-disable-next-line no-underscore-dangle,guard-for-in,no-restricted-syntax
-            for (const key in currentNoCompleteProposal._fieldsProto) {
-              proposalData.uid = currentNoCompleteProposal.id;
-              // eslint-disable-next-line no-underscore-dangle,no-prototype-builtins
-              if (currentNoCompleteProposal._fieldsProto.hasOwnProperty(key)) {
-                // eslint-disable-next-line no-underscore-dangle
-                if (typeof currentNoCompleteProposal._fieldsProto[key].integerValue !== 'undefined') {
+              // eslint-disable-next-line no-underscore-dangle,guard-for-in,no-restricted-syntax
+              for (const key in currentNoCompleteProposal._fieldsProto) {
+                proposalData.uid = currentNoCompleteProposal.id
+                // eslint-disable-next-line no-underscore-dangle,no-prototype-builtins
+                if (
+                  currentNoCompleteProposal._fieldsProto.hasOwnProperty(key)
+                ) {
                   // eslint-disable-next-line no-underscore-dangle
-                  proposalData[key] = Number(currentNoCompleteProposal._fieldsProto[key].integerValue);
-                  // eslint-disable-next-line no-underscore-dangle
-                } else if (typeof currentNoCompleteProposal._fieldsProto[key].booleanValue !== 'undefined') {
-                  // eslint-disable-next-line no-underscore-dangle
-                  proposalData[key] = currentNoCompleteProposal._fieldsProto[key].booleanValue;
-                } else {
-                  // eslint-disable-next-line no-underscore-dangle
-                  proposalData[key] = currentNoCompleteProposal._fieldsProto[key].stringValue;
+                  if (
+                    typeof currentNoCompleteProposal._fieldsProto[key]
+                      .integerValue !== 'undefined'
+                  ) {
+                    // eslint-disable-next-line no-underscore-dangle
+                    proposalData[key] = Number(
+                      currentNoCompleteProposal._fieldsProto[key].integerValue,
+                    )
+                    // eslint-disable-next-line no-underscore-dangle
+                  } else if (
+                    typeof currentNoCompleteProposal._fieldsProto[key]
+                      .booleanValue !== 'undefined'
+                  ) {
+                    // eslint-disable-next-line no-underscore-dangle
+                    proposalData[key] = currentNoCompleteProposal._fieldsProto[key].booleanValue
+                  } else {
+                    // eslint-disable-next-line no-underscore-dangle
+                    proposalData[key] = currentNoCompleteProposal._fieldsProto[key].stringValue
+                  }
                 }
               }
-            }
-            return res.status(200).json({ ok: true, proposal: proposalData });
-          }).catch((err) => {
-            throw err;
-          });
+              return res.status(200).json({ ok: true, proposal: proposalData })
+            })
+            .catch((err) => {
+              throw err
+            })
         } else {
-          return res.status(204).json({ ok: false, message: 'No proposals' });
+          return res.status(204).json({ ok: false, message: 'No proposals' })
         }
       })
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -580,57 +655,66 @@ const getProposalsPendingByUser = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const getOneProposal = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    let existProposalsInUser;
-    const data = {};
-    const user = await admin.firestore()
+    const { id } = req.params
+    let existProposalsInUser
+    const data = {}
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
     if (user.id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
     // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.proposalList && user._fieldsProto.proposalList.arrayValue.values.length > 0) {
+    if (
+      user._fieldsProto.proposalList
+      && user._fieldsProto.proposalList.arrayValue.values.length > 0
+    ) {
       // eslint-disable-next-line max-len,no-underscore-dangle
-      existProposalsInUser = user._fieldsProto.proposalList.arrayValue.values.find((element) => element.stringValue === id);
+      existProposalsInUser = user._fieldsProto.proposalList.arrayValue.values.find(
+        (element) => element.stringValue === id,
+      )
       if (typeof existProposalsInUser !== 'undefined') {
-        const { _fieldsProto } = await admin.firestore()
+        const { _fieldsProto } = await admin
+          .firestore()
           .collection(process.env.COLLECTION_NAME_PROPOSAL)
           .doc(id)
           .get()
           .catch((err) => {
-            throw err;
-          });
+            throw err
+          })
         // eslint-disable-next-line no-restricted-syntax
         for (const key in _fieldsProto) {
           // eslint-disable-next-line no-prototype-builtins
           if (_fieldsProto.hasOwnProperty(key)) {
-            data[key] = _fieldsProto[key].stringValue;
+            data[key] = _fieldsProto[key].stringValue
           }
         }
-        return res.status(200).json({ ok: true, proposal: data });
+        return res.status(200).json({ ok: true, proposal: data })
       }
-      return res.status(204).json({ ok: true, message: 'Proposal unknown' });
+      return res.status(204).json({ ok: true, message: 'Proposal unknown' })
     }
-    return res.status(204).json({ ok: true, message: 'Does not have Proposal associates' });
+    return res
+      .status(204)
+      .json({ ok: true, message: 'Does not have Proposal associates' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -651,64 +735,67 @@ const getOneProposal = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const getAllHiddenProposal = async (req, res, next) => {
   try {
-    const pageSize = 20;
-    const { hash } = req.query;
-    let { page } = req.query;
-    let documents;
-    if (typeof page === 'undefined' || page === '0') page = 1;
-    const proposalHash = [];
+    const pageSize = 20
+    const { hash } = req.query
+    let { page } = req.query
+    let documents
+    if (typeof page === 'undefined' || page === '0') page = 1
+    const proposalHash = []
     if (typeof hash !== 'undefined' || hash === '') {
-      documents = await admin.firestore()
+      documents = await admin
+        .firestore()
         .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
         .where('hash', '>=', hash)
         .where('hash', '<=', `${hash}\uf8ff`)
         .offset((page - 1) * pageSize)
         .limit(pageSize)
-        .get();
+        .get()
     } else {
-      documents = await admin.firestore()
+      documents = await admin
+        .firestore()
         .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
         .orderBy('created_at', 'desc')
         .offset((page - 1) * pageSize)
         .limit(pageSize)
         .get()
         .catch((err) => {
-          throw err;
-        });
+          throw err
+        })
     }
 
-    const totalDocs = await admin.firestore()
+    const totalDocs = await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
-      .get();
+      .get()
 
     // eslint-disable-next-line no-underscore-dangle
-    const sizePerPage = documents._docs().length;
+    const sizePerPage = documents._docs().length
     // eslint-disable-next-line no-underscore-dangle
-    const totalPag = Math.ceil(totalDocs._docs().length / pageSize);
+    const totalPag = Math.ceil(totalDocs._docs().length / pageSize)
 
     const gobjectData = await clientRPC
       .callRpc('gobject_list')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle,array-callback-return
     await documents._docs().map((elem) => {
-      const newData = {};
+      const newData = {}
       // eslint-disable-next-line no-underscore-dangle,no-restricted-syntax
       for (const key in elem._fieldsProto) {
         // eslint-disable-next-line no-underscore-dangle,no-prototype-builtins
         if (elem._fieldsProto.hasOwnProperty(key)) {
-          newData.uid = elem.id;
+          newData.uid = elem.id
           // eslint-disable-next-line no-underscore-dangle
-          newData.createTime = elem._createTime._seconds;
+          newData.createTime = elem._createTime._seconds
           // eslint-disable-next-line no-underscore-dangle
-          newData.hash = elem._fieldsProto.hash.stringValue;
+          newData.hash = elem._fieldsProto.hash.stringValue
         }
       }
-      proposalHash.push(newData);
-    });
+      proposalHash.push(newData)
+    })
 
     // eslint-disable-next-line array-callback-return
     proposalHash.map((elem) => {
@@ -716,30 +803,31 @@ const getAllHiddenProposal = async (req, res, next) => {
       for (const subKey in gobjectData) {
         // eslint-disable-next-line no-prototype-builtins
         if (gobjectData.hasOwnProperty(subKey)) {
-          const key = gobjectData[subKey];
+          const key = gobjectData[subKey]
           if (elem.hash === subKey) {
             // eslint-disable-next-line no-param-reassign
-            elem.extraInfoOfTheProposal = JSON.parse(key.DataString);
+            elem.extraInfoOfTheProposal = JSON.parse(key.DataString)
           }
         }
       }
-    });
+    })
 
     proposalHash.map(async (e) => {
-      const exist = Object.keys(gobjectData).find((elem) => elem === e.hash);
+      const exist = Object.keys(gobjectData).find((elem) => elem === e.hash)
       if (typeof exist === 'undefined') {
-        const i = proposalHash.indexOf(e);
-        proposalHash.splice(i, 1);
-        await admin.firestore()
+        const i = proposalHash.indexOf(e)
+        proposalHash.splice(i, 1)
+        await admin
+          .firestore()
           .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
           .doc(e.uid)
           .delete()
           .catch((err) => {
-            throw err;
-          });
+            throw err
+          })
       }
-    });
-    proposalHash.sort((a, b) => a.createTime - b.createTime).reverse();
+    })
+    proposalHash.sort((a, b) => a.createTime - b.createTime).reverse()
     return res.status(200).json({
       ok: true,
       pageSize,
@@ -751,11 +839,11 @@ const getAllHiddenProposal = async (req, res, next) => {
       previousPage: Number(page) - 1,
       nextPage: Number(page) + 1,
       proposalHash,
-    });
+    })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -774,44 +862,59 @@ const getAllHiddenProposal = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const createHiddenProposal = async (req, res, next) => {
   try {
-    const { hash } = req.body;
-    if (!hash) return res.status(406).json({ ok: false, message: 'required fields' });
-    if (hash.length !== 64) return res.status(406).json({ ok: false, message: 'invalid proposal hash' });
-    const isHidden = await admin.firestore()
+    const { hash } = req.body
+    if (!hash) return res.status(406).json({ ok: false, message: 'required fields' })
+    if (hash.length !== 64) {
+      return res
+        .status(406)
+        .json({ ok: false, message: 'invalid proposal hash' })
+    }
+    const isHidden = await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
       .where('hash', '==', hash)
       .get()
       .catch((err) => {
-        throw err;
-      });
-    if (isHidden.size > 0) return res.status(200).json({ ok: false, message: 'Proposal already hidden' });
+        throw err
+      })
+    if (isHidden.size > 0) {
+      return res
+        .status(200)
+        .json({ ok: false, message: 'Proposal already hidden' })
+    }
 
     const gobjectData = await clientRPC
       .callRpc('gobject_list')
       .call()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    const existingHash = Object.keys(gobjectData).find((e) => e === hash);
+    const existingHash = Object.keys(gobjectData).find((e) => e === hash)
 
     if (typeof existingHash === 'undefined') {
-      return res.status(406).json({ ok: false, message: 'the proposal does not exist in the governance list' });
+      return res
+        .status(406)
+        .json({
+          ok: false,
+          message: 'the proposal does not exist in the governance list',
+        })
     }
-    await admin.firestore()
+    await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
       .add({
         hash,
         created_at: admin.firestore.Timestamp.now(),
       })
       .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json({ ok: true, message: 'hash created' });
+        throw err
+      })
+    return res.status(200).json({ ok: true, message: 'hash created' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -830,33 +933,37 @@ const createHiddenProposal = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const deleteHiddenProposal = async (req, res, next) => {
   try {
-    const { hash } = req.params;
-    const isHidden = await admin.firestore()
+    const { hash } = req.params
+    const isHidden = await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle
-    const filterHash = isHidden._docs().find((doc) => doc._fieldsProto.hash.stringValue === hash);
+    const filterHash = isHidden
+      ._docs()
+      .find((doc) => doc._fieldsProto.hash.stringValue === hash)
 
     if (typeof filterHash === 'undefined') {
-      return res.status(204).json({ ok: false, message: 'no exist proposal' });
+      return res.status(204).json({ ok: false, message: 'no exist proposal' })
     }
 
-    await admin.firestore()
+    await admin
+      .firestore()
       .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
       .doc(filterHash.id)
       .delete()
       .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json({ ok: true, message: 'hash removed' });
+        throw err
+      })
+    return res.status(200).json({ ok: true, message: 'hash removed' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -878,62 +985,67 @@ const deleteHiddenProposal = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const updateProposal = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { data } = req.body;
-    const newData = {};
-    let respData = {};
-    const prepareObjectProposal = {};
-    let existProposalInUser;
-    const user = await admin.firestore()
+    const { id } = req.params
+    const { data } = req.body
+    const newData = {}
+    let respData = {}
+    const prepareObjectProposal = {}
+    let existProposalInUser
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
     if (user.id !== req.user) {
       return res.status(406).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
-    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' });
+    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' })
 
     // eslint-disable-next-line prefer-const,max-len,no-underscore-dangle
-    existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find((element) => element.stringValue === id);
+    existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find(
+      (element) => element.stringValue === id,
+    )
 
     if (typeof existProposalInUser === 'undefined') {
       return res.status(204).json({
         ok: false,
         message: 'non-existent proposal',
-      });
+      })
     }
 
     // eslint-disable-next-line guard-for-in,no-restricted-syntax
     for (const key in data) {
-      newData[key] = data[key];
+      newData[key] = data[key]
     }
 
-    await admin.firestore()
+    await admin
+      .firestore()
       .doc(`${process.env.COLLECTION_NAME_PROPOSAL}/${id}`)
       .update(newData)
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    const proposal = await admin.firestore()
+    const proposal = await admin
+      .firestore()
       .doc(`${process.env.COLLECTION_NAME_PROPOSAL}/${id}`)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
     // eslint-disable-next-line no-underscore-dangle,no-restricted-syntax
     for (const key in proposal._fieldsProto) {
@@ -942,10 +1054,10 @@ const updateProposal = async (req, res, next) => {
         // eslint-disable-next-line no-underscore-dangle
         if (proposal._fieldsProto[key].integerValue) {
           // eslint-disable-next-line no-underscore-dangle
-          respData[key] = proposal._fieldsProto[key].integerValue;
+          respData[key] = proposal._fieldsProto[key].integerValue
         } else {
           // eslint-disable-next-line no-underscore-dangle
-          respData[key] = proposal._fieldsProto[key].stringValue;
+          respData[key] = proposal._fieldsProto[key].stringValue
         }
       }
     }
@@ -953,25 +1065,33 @@ const updateProposal = async (req, res, next) => {
     // eslint-disable-next-line no-underscore-dangle
     if (proposal._fieldsProto.prepareObjectProposal) {
       // eslint-disable-next-line no-underscore-dangle,no-restricted-syntax
-      for (const prepareKey in proposal._fieldsProto.prepareObjectProposal.mapValue.fields) {
+      for (const prepareKey in proposal._fieldsProto.prepareObjectProposal
+        .mapValue.fields) {
         // eslint-disable-next-line no-underscore-dangle
-        if (proposal._fieldsProto.prepareObjectProposal.mapValue.fields[prepareKey].valueType === 'integerValue') {
+        if (
+          proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
+            prepareKey
+          ].valueType === 'integerValue'
+        ) {
           // eslint-disable-next-line no-underscore-dangle,max-len
-          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[prepareKey].integerValue;
+          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
+            prepareKey
+          ].integerValue
         } else {
           // eslint-disable-next-line no-underscore-dangle,max-len
-          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[prepareKey].stringValue;
+          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
+            prepareKey
+          ].stringValue
         }
       }
     }
 
-    respData = { ...respData, prepareObjectProposal };
-    return res.status(200).json({ ok: true, proposal: respData });
-  } catch
-  (err) {
-    next(err);
+    respData = { ...respData, prepareObjectProposal }
+    return res.status(200).json({ ok: true, proposal: respData })
+  } catch (err) {
+    next(err)
   }
-};
+}
 
 /**
  * @function
@@ -993,55 +1113,64 @@ const updateProposal = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const deleteProposal = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    let existProposalInUser;
-    const proposals = [];
-    const user = await admin.firestore()
+    const { id } = req.params
+    let existProposalInUser
+    const proposals = []
+    const user = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
     // eslint-disable-next-line no-underscore-dangle
     if (user._fieldsProto.proposalList.arrayValue.values.length > 0) {
       // eslint-disable-next-line no-underscore-dangle,max-len
-      existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find((element) => element.stringValue === id);
+      existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find(
+        (element) => element.stringValue === id,
+      )
       if (typeof existProposalInUser !== 'undefined') {
         // eslint-disable-next-line no-underscore-dangle,array-callback-return
         user._fieldsProto.proposalList.arrayValue.values.map((proposal) => {
-          proposals.push(proposal.stringValue);
-        });
-        const index = proposals.findIndex((element) => element === existProposalInUser.stringValue);
-        proposals.splice(index, 1);
-        await admin.firestore()
+          proposals.push(proposal.stringValue)
+        })
+        const index = proposals.findIndex(
+          (element) => element === existProposalInUser.stringValue,
+        )
+        proposals.splice(index, 1)
+        await admin
+          .firestore()
           .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
           .update('proposalList', proposals)
           .catch((err) => {
-            throw err;
-          });
-        await admin.firestore()
+            throw err
+          })
+        await admin
+          .firestore()
           .doc(`${process.env.COLLECTION_NAME_PROPOSAL}/${id}`)
           .delete()
           .catch((err) => {
-            throw err;
-          });
-        return res.status(200).json({ ok: true, message: 'Proposal Removed' });
+            throw err
+          })
+        return res.status(200).json({ ok: true, message: 'Proposal Removed' })
       }
-      return res.status(204).json({ ok: true, message: 'Proposal unknown' });
+      return res.status(204).json({ ok: true, message: 'Proposal unknown' })
     }
-    return res.status(204).json({ ok: true, message: 'Does not have associated Proposals' });
+    return res
+      .status(204)
+      .json({ ok: true, message: 'Does not have associated Proposals' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 module.exports = {
   check,
@@ -1055,4 +1184,4 @@ module.exports = {
   deleteHiddenProposal,
   getAllHiddenProposal,
   getProposalsPendingByUser,
-};
+}
