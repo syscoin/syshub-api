@@ -91,7 +91,9 @@ const getAllUser = async (req, res, next) => {
     })
 
     if (typeof email !== 'undefined' && email !== '') {
-      const newUserRecordResponse = userRecordResponse.filter((e) => e.email.includes(email))
+      const newUserRecordResponse = userRecordResponse.filter((e) =>
+        e.email.includes(email)
+      )
       return res.status(200).json({
         ok: true,
         pageSize,
@@ -233,6 +235,7 @@ const getUser2fa = async (req, res, next) => {
       .catch((err) => {
         throw err
       })
+
     // eslint-disable-next-line no-underscore-dangle
     if (typeof user._fieldsProto !== 'undefined') {
       const userData = {}
@@ -254,7 +257,6 @@ const getUser2fa = async (req, res, next) => {
     }
     return res.status(204).json({ ok: false, message: 'not content' })
   } catch (err) {
-    console.log(err)
     next(err)
   }
 }
@@ -287,7 +289,8 @@ const updateUser = async (req, res, next) => {
       })
     }
     const { data } = req.body
-    if (!data) return res.status(406).json({ ok: false, message: 'required fields' })
+    if (!data)
+      return res.status(406).json({ ok: false, message: 'required fields' })
     await admin
       .auth()
       .getUser(id)
@@ -303,8 +306,8 @@ const updateUser = async (req, res, next) => {
     return res.status(200).json({ ok: true, message: 'update' })
   } catch (err) {
     if (
-      err.message
-      === 'There is no user record corresponding to the provided identifier.'
+      err.message ===
+      'There is no user record corresponding to the provided identifier.'
     ) {
       return res.status(406).json({
         ok: false,
@@ -368,7 +371,7 @@ const updateActionsUser = async (req, res, next) => {
       const userdata = user.data()
       const seed = decryptAes(
         userdata.gAuthSecret,
-        process.env.KEY_FOR_ENCRYPTION,
+        process.env.KEY_FOR_ENCRYPTION
       )
       const seedcode = decryptAes(seed, process.env.KEY_FOR_ENCRYPTION)
       const verifycode = verifyAuthCode(seedcode, data.code)
@@ -379,7 +382,8 @@ const updateActionsUser = async (req, res, next) => {
         })
       }
     }
-    if (!data) return res.status(406).json({ ok: false, message: 'required fields' })
+    if (!data)
+      return res.status(406).json({ ok: false, message: 'required fields' })
     if (data.twoFa === true) {
       if (data.sms === true && data.gAuth === true) {
         return res.status(400).json({
@@ -392,12 +396,12 @@ const updateActionsUser = async (req, res, next) => {
     // eslint-disable-next-line no-restricted-syntax
     Object.keys(data).find((key) => {
       if (
-        key !== 'pwd'
-        && key !== 'twoFa'
-        && key !== 'sms'
-        && key !== 'gAuth'
-        && key !== 'gAuthSecret'
-        && key !== 'code'
+        key !== 'pwd' &&
+        key !== 'twoFa' &&
+        key !== 'sms' &&
+        key !== 'gAuth' &&
+        key !== 'gAuthSecret' &&
+        key !== 'code'
       ) {
         return res.status(406).json({
           ok: false,
@@ -433,8 +437,8 @@ const updateActionsUser = async (req, res, next) => {
     return res.status(200).json({ ok: true, message: 'Updated data' })
   } catch (err) {
     if (
-      err.message
-      === 'The password is invalid or the user does not have a password.'
+      err.message ===
+      'The password is invalid or the user does not have a password.'
     ) {
       return res.status(406).json({
         ok: false,
@@ -442,8 +446,8 @@ const updateActionsUser = async (req, res, next) => {
       })
     }
     if (
-      err.message
-      === 'signInWithEmailAndPassword failed: Second argument "password" must be a valid string.'
+      err.message ===
+      'signInWithEmailAndPassword failed: Second argument "password" must be a valid string.'
     ) {
       return res.status(406).json({
         ok: false,
@@ -521,7 +525,7 @@ const deleteUser = async (req, res, next) => {
                 .catch((err) => {
                   throw err
                 })
-            }),
+            })
           ).catch((err) => {
             throw err
           })
@@ -544,7 +548,7 @@ const deleteUser = async (req, res, next) => {
                 .catch((err) => {
                   throw err
                 })
-            }),
+            })
           ).catch((err) => {
             throw err
           })

@@ -1,6 +1,5 @@
-const jwtDecode = require('jwt-decode')
 const { admin } = require('../utils/config')
-const { decryptAes } = require('../utils/encrypt')
+
 /**
  * @function
  * @name firebaseAuthenticated
@@ -18,73 +17,37 @@ const { decryptAes } = require('../utils/encrypt')
  */
 const firebaseAuthenticated = async (req, res, next) => {
   try {
-    let token
     const reg = /"/g
-    if (req.header('Authorization')) {
-      token = decryptAes(
-        req.header('Authorization').replace('Bearer', '').trim(),
-        process.env.KEY_FOR_ENCRYPTION,
-      )
-      const jwt = jwtDecode(token.replace(reg, ''))
-      const decodedToken = await admin
-        .auth()
-        .verifyIdToken(token.replace(reg, ''))
-      const user = await admin.auth().getUser(jwt.user_id)
-
-      if (!user) {
-        return res.status(401).json({ ok: false, message: 'Not authenticated' })
-      }
-
-      if (new Date().getTime() / 1000 > decodedToken.exp) {
-        return res.status(401).json({ ok: false, message: 'Not authenticated' })
-      }
-      const tokenSearch = req
-        .header('Authorization')
-        .replace('Bearer', '')
-        .trim()
-      const tokenExpired = await admin
-        .firestore()
-        .collection(process.env.COLLECTION_NAME_TOKENS)
-        .where('token', '==', `${tokenSearch}`)
-        .get()
-      if (!tokenExpired.empty) {
-        return res.status(401).json({ ok: false, message: 'token has expired' })
-      }
-      if (decodedToken.user_id === jwt.user_id) {
-        req.user = user.uid
-        return next()
-      }
+    const authHeader = req.header('Authorization')
+    if (!authHeader) {
       return res.status(401).json({ ok: false, message: 'Not authenticated' })
-
-      // admin.auth().verifyIdToken(token.replace(reg, '')).then((decodedToken) => {
-      //   admin.auth().getUser(decodedToken.user_id).then((user) => {
-      //     if ((new Date().getTime() / 1000) > decodedToken.exp) {
-      //       return res.status(401).json({ok: false, message: 'Not authenticated'});
-      //     }
-      //     if (decodedToken.user_id === jwt.user_id) {
-      //       req.user = user.uid
-      //       return next()
-      //     }else{
-      //       console.log('entro aqui')
-      //       return res.status().json({
-      //
-      //       })
-      //     }
-      //   }).catch((err) => {
-      //     throw err
-      //   })
-      // }).catch((err) => {
-      //   if (err.message.split('.')[0] === 'Firebase ID token has "kid" claim which does not correspond to a known public key') return res.status(401).json({ok: false, message: 'token has expired'});
-      //   if (err.message.split('.')[0] === 'Firebase ID token has expired') return res.status(401).json({ok: false, message: 'token has expired'});
-      //   if (err.message.split('.')[0] === 'Decoding Firebase ID token failed') return res.status(401).json({ok: false, message: 'Decoding Firebase ID token failed.'});
-      //   throw err
-      // })
     }
-    return res.status(401).json({ ok: false, message: 'Not authenticated' })
+    const token = authHeader.replace('Bearer', '').trim()
+    const decodedToken = await admin
+      .auth()
+      .verifyIdToken(token.replace(reg, ''))
+
+    const user = await admin.auth().getUser(decodedToken.uid)
+
+    if (!user) {
+      return res.status(401).json({ ok: false, message: 'Not authenticated' })
+    }
+
+    const tokenSearch = req.header('Authorization').replace('Bearer', '').trim()
+    const tokenExpired = await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_TOKENS)
+      .where('token', '==', `${tokenSearch}`)
+      .get()
+    if (!tokenExpired.empty) {
+      return res.status(401).json({ ok: false, message: 'token has expired' })
+    }
+    req.user = user.uid
+    return next()
   } catch (err) {
     if (
-      err.message.split('.')[0]
-      === 'Firebase ID token has "kid" claim which does not correspond to a known public key'
+      err.message.split('.')[0] ===
+      'Firebase ID token has "kid" claim which does not correspond to a known public key'
     ) {
       return res.status(401).json({
         ok: false,

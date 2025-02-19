@@ -45,7 +45,7 @@ describe('interaction with rpc', () => {
       .post('/proposal/check')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send(payload)
       .then((res) => {
         expect(res.statusCode).toBe(200)
@@ -75,7 +75,7 @@ describe('interaction with rpc', () => {
       .post('/proposal/prepare')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send(payload)
       .then((res) => {
         console.log(res.body)
@@ -102,7 +102,7 @@ describe('interaction with rpc', () => {
       .put(`/proposal/submit/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send(payload)
       .then((res) => {
         expect(res.statusCode).toBe(200)
@@ -128,7 +128,7 @@ describe('interaction with rpc', () => {
       .post('/proposal/vote')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send(payload)
       .then((res) => {
         console.log(res.body)
@@ -145,7 +145,7 @@ describe('interaction with firebase', () => {
       .get('/proposal/pending/recover')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         expect(res.body.ok).toBeBoolean()
@@ -160,7 +160,7 @@ describe('interaction with firebase', () => {
       .get(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         if (res.body.proposal.hash) expect(res.body.proposal.hash.length).toBe(64)
@@ -181,7 +181,7 @@ describe('interaction with firebase', () => {
       .put(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ data: { complete: true } })
       .then((res) => {
         expect(res.body.ok).toBeBoolean()
@@ -219,7 +219,7 @@ describe('interaction with firebase', () => {
       .delete(`/proposal/${proposalUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         expect(res.body.ok).toBeBoolean()

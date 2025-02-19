@@ -26,7 +26,7 @@ describe('User Actions', () => {
     await request
       .get(`/user/${userUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         expect(res.body.ok).toBe(true)
@@ -46,7 +46,7 @@ describe('User Actions', () => {
     await request
       .get(`/user/${userUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         expect(res.body.ok).toBe(false)
@@ -87,7 +87,7 @@ describe('User Actions', () => {
     await request
       .put(`/user/extend/${userUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .send({ data })
       .then((res) => {
@@ -107,7 +107,7 @@ describe('User Actions', () => {
     await request
       .put(`/user/${userUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .send({ data })
       .then((res) => {
@@ -124,7 +124,7 @@ describe('User Actions', () => {
     await request
       .delete(`/user/${userUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         expect(res.body.ok).toBe(true)

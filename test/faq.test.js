@@ -28,7 +28,7 @@ const getToken = () => new Promise((resolve, reject) => {
     .auth()
     .signInWithEmailAndPassword(email, pwd)
     .then((res) => {
-      resolve(encryptAes(res.user.ya, process.env.KEY_FOR_ENCRYPTION))
+      resolve(encryptAes(res.user.accessToken, process.env.KEY_FOR_ENCRYPTION))
     })
     .catch((err) => {
       reject(err)
@@ -55,7 +55,7 @@ describe('interaction with firebase', () => {
       .get('/faq/')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         expect(res.body).toBeObject()
@@ -77,7 +77,7 @@ describe('interaction with firebase', () => {
       .get(`/faq/${faqUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         expect(res.body).toBeObject()
@@ -107,7 +107,7 @@ describe('interaction with firebase', () => {
       .post('/faq/')
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send(payload)
       .then((res) => {
         expect(res.statusCode).toBe(200)
@@ -135,7 +135,7 @@ describe('interaction with firebase', () => {
       .put(`/faq/${faqUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ data: payload })
       .then((res) => {
         expect(res.statusCode).toBe(200)
@@ -151,7 +151,7 @@ describe('interaction with firebase', () => {
       .delete(`/faq/${faqUid}`)
       .set('Content-type', 'application/json')
       .set('appclient', 'sysnode-info')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .then((res) => {
         expect(res.statusCode).toBe(200)
         expect(res.body).toBeObject()

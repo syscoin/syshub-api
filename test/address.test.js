@@ -13,7 +13,7 @@ const getToken = () => new Promise((resolve, reject) => {
     .auth()
     .signInWithEmailAndPassword(email, pwd)
     .then((res) => {
-      resolve(encryptAes(res.user.ya, process.env.KEY_FOR_ENCRYPTION))
+      resolve(encryptAes(res.user.accessToken, process.env.KEY_FOR_ENCRYPTION))
     })
     .catch((err) => {
       reject(err)
@@ -26,7 +26,7 @@ describe('interaction with firebase', () => {
     request
       .get('/address/')
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         if (res.statusCode === 200) {
@@ -49,7 +49,7 @@ describe('interaction with firebase', () => {
     request
       .get(`/address/${VotingAddressUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         expect(res.statusCode).toBe(200)
@@ -75,7 +75,7 @@ describe('interaction with firebase', () => {
     request
       .post('/address/')
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .send(payload)
       .then((res) => {
@@ -110,7 +110,7 @@ describe('interaction with firebase', () => {
     request
       .post('/address/')
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .send({ listMN: JSON.stringify(payload) })
       .then((res) => {
@@ -131,7 +131,7 @@ describe('interaction with firebase', () => {
     request
       .put(`/address/${VotingAddressUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .send({ data: payload })
       .then((res) => {
@@ -147,7 +147,7 @@ describe('interaction with firebase', () => {
     request
       .delete(`/address/${VotingAddressUid}`)
       .set('Content-type', 'application/json')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .set('appclient', 'sysnode-info')
       .then((res) => {
         expect(res.statusCode).toBe(200)
