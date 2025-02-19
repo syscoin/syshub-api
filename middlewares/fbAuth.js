@@ -43,6 +43,7 @@ const firebaseAuthenticated = async (req, res, next) => {
       return res.status(401).json({ ok: false, message: 'token has expired' })
     }
     req.user = user.uid
+
     return next()
   } catch (err) {
     if (
