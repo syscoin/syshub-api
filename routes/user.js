@@ -7,6 +7,7 @@ const {
   updateActionsUser,
   deleteUser,
   signOut,
+  verifyGAuthCode,
 } = require('../controllers/user')
 const fbAuth = require('../middlewares/fbAuth')
 const isAdmin = require('../middlewares/isAdmin')
@@ -20,5 +21,6 @@ router.put('/extend/:id', fbAuth, updateActionsUser)
 router.put('/:id', fbAuth, updateUser)
 router.delete('/:id', fbAuth, deleteUser)
 router.post('/revoke/:id', fbAuth, signOut)
+router.post('/verify-gauth-code', fbAuth, verifyGAuthCode)
 
 module.exports = router

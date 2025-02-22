@@ -1,5 +1,6 @@
-const firebase = require('firebase/app')
-const { admin } = require('../utils/config')
+const { signInWithEmailAndPassword, getAuth } = require('firebase/auth')
+
+const { admin, firebaseApp } = require('../utils/config')
 const { encryptAes, decryptAes } = require('../utils/encrypt')
 const { verifyAuthCode } = require('../utils/helpers')
 
@@ -348,13 +349,13 @@ const updateActionsUser = async (req, res, next) => {
       })
     }
 
-    const newData = {}
     if (req.user !== id) {
       return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
       })
     }
+
     const user = await admin
       .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
@@ -364,26 +365,31 @@ const updateActionsUser = async (req, res, next) => {
         throw err
       })
 
-    const verify = await admin.auth().getUser(id)
-    await firebase.auth().signInWithEmailAndPassword(verify.email, data.pwd)
+    const authUser = await admin.auth().getUser(id)
 
-    if (method === 'gauth-disabled') {
-      const userdata = user.data()
-      const seed = decryptAes(
-        userdata.gAuthSecret,
-        process.env.KEY_FOR_ENCRYPTION
-      )
-      const seedcode = decryptAes(seed, process.env.KEY_FOR_ENCRYPTION)
-      const verifycode = verifyAuthCode(seedcode, data.code)
-      if (!verifycode) {
-        return res.status(400).json({
-          ok: false,
-          message: 'Google Authenticator code invalid',
-        })
-      }
+    if (!authUser) {
+      return res.status(400).json({
+        ok: false,
+        message: 'User not found',
+      })
     }
-    if (!data)
+
+    if (!data || !data.pwd) {
       return res.status(406).json({ ok: false, message: 'required fields' })
+    }
+    try {
+      await signInWithEmailAndPassword(
+        getAuth(firebaseApp),
+        authUser.email,
+        data.pwd
+      )
+    } catch (err) {
+      return res.status(400).json({
+        ok: false,
+        message: 'invalid password',
+      })
+    }
+
     if (data.twoFa === true) {
       if (data.sms === true && data.gAuth === true) {
         return res.status(400).json({
@@ -393,44 +399,41 @@ const updateActionsUser = async (req, res, next) => {
       }
     }
 
-    // eslint-disable-next-line no-restricted-syntax
-    Object.keys(data).find((key) => {
-      if (
-        key !== 'pwd' &&
-        key !== 'twoFa' &&
-        key !== 'sms' &&
-        key !== 'gAuth' &&
-        key !== 'gAuthSecret' &&
-        key !== 'code'
-      ) {
-        return res.status(406).json({
+    const userData = user.data()
+
+    const updatedData = {
+      gAuth: data.gAuth === undefined ? userData.gAuth : data.gAuth,
+      sms: data.sms === undefined ? userData.sms : data.sms,
+      twoFa: data.twoFa === undefined ? userData.twoFa : data.twoFa,
+      gAuthSecret: userData.gAuthSecret || undefined,
+    }
+
+    if (method === 'gauth-disabled' && data.code) {
+      const userdata = user.data()
+      const seed = decryptAes(
+        userdata.gAuthSecret,
+        process.env.KEY_FOR_ENCRYPTION
+      )
+
+      const verifycode = verifyAuthCode(seed, data.code)
+      if (!verifycode) {
+        return res.status(400).json({
           ok: false,
-          message: "You can't update",
+          message: 'Google Authenticator code invalid',
         })
       }
-    })
-
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto) {
-      delete data.pwd
-      delete data.code
-      Object.keys(data).forEach((key) => {
-        if (key === 'gAuthSecret') {
-          if (data[key] === null) {
-            newData[key] = data[key]
-          } else {
-            newData[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION)
-          }
-        } else {
-          newData[key] = data[key]
-        }
-      })
+      updatedData.gAuth = false
+    } else if (data.gAuth && data.gAuthSecret) {
+      const seed = encryptAes(data.gAuthSecret, process.env.KEY_FOR_ENCRYPTION)
+      updatedData.gAuthSecret = seed
+      updatedData.gAuth = data.gAuth
     }
+
     await admin
       .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(id)
-      .update(newData)
+      .update(updatedData)
       .catch((err) => {
         throw err
       })
@@ -626,6 +629,50 @@ const signOut = async (req, res, next) => {
   }
 }
 
+const verifyGAuthCode = async (req, res) => {
+  const { code } = req.body
+
+  if (!code) {
+    return res.status(400).json({
+      ok: false,
+    })
+  }
+  try {
+    const user = await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+
+    const userData = user.data()
+    if (userData.gAuth === false) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Google Auth not enabled',
+      })
+    }
+
+    const seed = decryptAes(
+      userData.gAuthSecret,
+      process.env.KEY_FOR_ENCRYPTION
+    )
+    const isVerified = verifyAuthCode(seed, code)
+    if (isVerified) {
+      return res.status(200).json({
+        ok: true,
+      })
+    }
+    return res.status(400).json({
+      ok: false,
+    })
+  } catch (err) {
+    return res.status(400).json({
+      ok: false,
+      error: err.message,
+    })
+  }
+}
+
 module.exports = {
   getAllUser,
   getOneUser,
@@ -634,4 +681,5 @@ module.exports = {
   updateActionsUser,
   deleteUser,
   signOut,
+  verifyGAuthCode,
 }

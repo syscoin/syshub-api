@@ -6,7 +6,7 @@ const csp = require('content-security-policy')
 const fs = require('fs')
 const serviceAccount = require('../.firebase-service-account.json')
 /** Firebase app initialization * */
-firebase.initializeApp({
+const firebaseApp = firebase.initializeApp({
   apiKey: process.env.FIREBASE_KEY,
   authDomain: process.env.FIREBASE_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
@@ -33,12 +33,12 @@ const certificate = {
   key: fs.readFileSync(
     process.env.NODE_ENV === 'prod'
       ? process.env.SSL_KEY_ROUTE
-      : './certificates/old/private.key',
+      : './certificates/old/private.key'
   ),
   cert: fs.readFileSync(
     process.env.NODE_ENV === 'prod'
       ? process.env.SSL_CRT_ROUTE
-      : './certificates/old/certificate.crt',
+      : './certificates/old/certificate.crt'
   ),
   // ca: fs.readFileSync('./certificates/old/ca_bundle.crt')
 }
@@ -56,6 +56,7 @@ module.exports = {
   clientRPC,
   rpcServices,
   firebase,
+  firebaseApp,
   admin,
   globalCSP,
   localCSP,
