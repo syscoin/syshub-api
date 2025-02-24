@@ -41,16 +41,15 @@
  * @return {object} positive answer
  */
 
-let verifyClient = (req, res, next) => {
-  let {appclient} = req.headers
+const verifyClient = (req, res, next) => {
+  const { appclient } = req.headers
   if (appclient === 'sysnode-info') {
-    next()
-  } else {
-    return res.status(406).json({ok: false, message: 'not allowed'})
+    return next()
   }
+  return res.status(406).json({ ok: false, message: 'not allowed' })
 }
 
-module.exports = verifyClient;
+module.exports = verifyClient
 </code></pre>
         </article>
     </section>
@@ -61,13 +60,13 @@ module.exports = verifyClient;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#check">check</a></li><li><a href="global.html#countMasterNodes">countMasterNodes</a></li><li><a href="global.html#createHiddenProposal">createHiddenProposal</a></li><li><a href="global.html#createMasterNode">createMasterNode</a></li><li><a href="global.html#deleteHiddenProposal">deleteHiddenProposal</a></li><li><a href="global.html#deleteProposal">deleteProposal</a></li><li><a href="global.html#deleteUser">deleteUser</a></li><li><a href="global.html#destroyMasterNode">destroyMasterNode</a></li><li><a href="global.html#firebaseAuthenticated">firebaseAuthenticated</a></li><li><a href="global.html#getAllHiddenProposal">getAllHiddenProposal</a></li><li><a href="global.html#getAllMasterNodesByUser">getAllMasterNodesByUser</a></li><li><a href="global.html#getAllUser">getAllUser</a></li><li><a href="global.html#getGovernanceInfo">getGovernanceInfo</a></li><li><a href="global.html#getMasterNode">getMasterNode</a></li><li><a href="global.html#getMiningInfo">getMiningInfo</a></li><li><a href="global.html#getOneProposal">getOneProposal</a></li><li><a href="global.html#getOneUser">getOneUser</a></li><li><a href="global.html#getProposalsPendingByUser">getProposalsPendingByUser</a></li><li><a href="global.html#getSuperBlockBudget">getSuperBlockBudget</a></li><li><a href="global.html#getUser2fa">getUser2fa</a></li><li><a href="global.html#info">info</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#prepare">prepare</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#submit">submit</a></li><li><a href="global.html#updateActionsUser">updateActionsUser</a></li><li><a href="global.html#updateMaterNode">updateMaterNode</a></li><li><a href="global.html#updateProposal">updateProposal</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#verifyClient">verifyClient</a></li><li><a href="global.html#vote">vote</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#check">check</a></li><li><a href="global.html#countMasterNodes">countMasterNodes</a></li><li><a href="global.html#createAdmin">createAdmin</a></li><li><a href="global.html#createHiddenProposal">createHiddenProposal</a></li><li><a href="global.html#createQuestions">createQuestions</a></li><li><a href="global.html#createVotingAddress">createVotingAddress</a></li><li><a href="global.html#deleteAdmin">deleteAdmin</a></li><li><a href="global.html#deleteHiddenProposal">deleteHiddenProposal</a></li><li><a href="global.html#deleteProposal">deleteProposal</a></li><li><a href="global.html#deleteQuestions">deleteQuestions</a></li><li><a href="global.html#deleteUser">deleteUser</a></li><li><a href="global.html#destroyVotingAddress">destroyVotingAddress</a></li><li><a href="global.html#firebaseAuthenticated">firebaseAuthenticated</a></li><li><a href="global.html#getALlQuestions">getALlQuestions</a></li><li><a href="global.html#getAllAdmins">getAllAdmins</a></li><li><a href="global.html#getAllHiddenProposal">getAllHiddenProposal</a></li><li><a href="global.html#getAllMasterNodesByUser">getAllMasterNodesByUser</a></li><li><a href="global.html#getAllUser">getAllUser</a></li><li><a href="global.html#getCurrentQuestions">getCurrentQuestions</a></li><li><a href="global.html#getGovernanceInfo">getGovernanceInfo</a></li><li><a href="global.html#getMiningInfo">getMiningInfo</a></li><li><a href="global.html#getOneProposal">getOneProposal</a></li><li><a href="global.html#getOneUser">getOneUser</a></li><li><a href="global.html#getProposalsPendingByUser">getProposalsPendingByUser</a></li><li><a href="global.html#getQuestions">getQuestions</a></li><li><a href="global.html#getSuperBlockBudget">getSuperBlockBudget</a></li><li><a href="global.html#getUser2fa">getUser2fa</a></li><li><a href="global.html#getVotingAddress">getVotingAddress</a></li><li><a href="global.html#info">info</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#masterNodes">masterNodes</a></li><li><a href="global.html#prepare">prepare</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#stats">stats</a></li><li><a href="global.html#submit">submit</a></li><li><a href="global.html#updateActionsUser">updateActionsUser</a></li><li><a href="global.html#updateProposal">updateProposal</a></li><li><a href="global.html#updateQuestions">updateQuestions</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#updateVotingAddress">updateVotingAddress</a></li><li><a href="global.html#usersApp">usersApp</a></li><li><a href="global.html#verifyClient">verifyClient</a></li><li><a href="global.html#vote">vote</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Tue Jan 19 2021 11:47:52 GMT-0400 (Venezuela Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Feb 24 2025 22:57:07 GMT+0800 (GMT+08:00)
 </footer>
 
 <script> prettyPrint(); </script>

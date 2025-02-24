@@ -26,353 +26,14 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const { checkMN, checkBodyEmpty } = require('../utils/helpers');
-const { clientRPC, admin } = require('../utils/config');
-const { encryptAes, decryptAes } = require('../utils/encrypt');
-
-/**
- * @function
- * @name countMasterNodes
- * @desc prints the number of all known masternodes.
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {object} positive answer
- * @example
- * {
-    "total": 2067,
-    "enabled": 1917,
-    "qualify": 1870
-    }
- */
-// eslint-disable-next-line consistent-return
-const countMasterNodes = async (req, res, next) => {
-  try {
-    const nMasterNodes = await clientRPC
-      .callRpc('masternode_count')
-      .call(true)
-      .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json({ ok: true, nMasterNodes });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * @function
- * @name list
- * @desc lists governance objects
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {array} positive answer
- *
- * @example
- *  {
-        "Hash": "16b85f92352efabf32fbdd986c41ccd884f511909db70679e22318f378b7ec7c",
-        "ColHash": "0000000000000000000000000000000000000000000000000000000000000000",
-        "ObectType": 2,
-        "CreationTime": 1606531853,
-        "AbsoluteYesCount": 1757,
-        "YesCount": 1757,
-        "NoCount": 0,
-        "AbstainCount": 0,
-        "fBlockchainValidity": true,
-        "IsValidReason": "",
-        "fCachedValid": true,
-        "fCachedFunding": true,
-        "fCachedDelete": false,
-        "fCachedEndorsed": false,
-        "event_block_height": 788400,
-        "payment_addresses": "sys1qvmhjxn8kaufe0mmf88edy77gcq3c4z4ggm43zc|sys1qnmp9aew5x2djeld2w7m8c97t8a3497d5f4c3yc|sys1q5hjkux3c3ghvxdmhhzw2pdznm8ejwzna9khd9n|sys1qwjs7acmk07xtwgrr36e4dtcvngp7c7ckskd2z3",
-        "payment_amounts": "4567.00000000|200000.00000000|235000.00000000|64217.00000000",
-        "proposal_hashes": "f4e517aa1039561c4338ce261bbfa463167434a87c212b38006fe217342a55e1|de8c4f42d74dd6934cb0738a289d874f1cd3cfba22b969fddb7409a0c24ed6b1|d629153f5262e0ff896671eaa1860b651a3a3945dee1608c639c52020cc0bf07|0a63e563fe0cde738c8f45facf3d2f82d6370ff3696798381d9a7988e4b2c849",
-        "type": 2
-    },
- {
-        "Hash": "f4e517aa1039561c4338ce261bbfa463167434a87c212b38006fe217342a55e1",
-        "ColHash": "1a2439df7f24588845cd1f369b4144d4bc087c0830374ba6f3eef019026f68ba",
-        "ObectType": 1,
-        "CreationTime": 1606040805,
-        "AbsoluteYesCount": 416,
-        "YesCount": 468,
-        "NoCount": 52,
-        "AbstainCount": 0,
-        "fBlockchainValidity": true,
-        "IsValidReason": "",
-        "fCachedValid": true,
-        "fCachedFunding": true,
-        "fCachedDelete": false,
-        "fCachedEndorsed": false,
-        "type": 1,
-        "name": "extendingsyslinksnov",
-        "title": "Extending Syslinks November",
-        "description": "",
-        "nPayment": 6,
-        "first_epoch": 1606040805,
-        "start_epoch": 1606040805,
-        "end_epoch": 1621679205,
-        "payment_address": "sys1qvmhjxn8kaufe0mmf88edy77gcq3c4z4ggm43zc",
-        "payment_amount": 4567,
-        "url": "https://support.syscoin.org/t/2020-11-12-extending-syslinks/321"
-    },
- */
-// eslint-disable-next-line consistent-return
-const list = async (req, res, next) => {
-  try {
-    const proposals = [];
-    const hiddenProposal = [];
-    const proposalResp = [];
-
-    const listProposalsHidden = await admin.firestore()
-      .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
-      .get()
-      .catch((err) => {
-        throw err;
-      });
-
-    // eslint-disable-next-line no-underscore-dangle,array-callback-return
-    listProposalsHidden._docs().map((doc) => {
-      // eslint-disable-next-line no-underscore-dangle
-      hiddenProposal.push(doc._fieldsProto.hash.stringValue);
-    });
-
-    const gObjectList = await clientRPC
-      .callRpc('gobject_list')
-      .call()
-      .catch((err) => {
-        throw err;
-      });
-
-    // eslint-disable-next-line no-restricted-syntax
-    for (const gObjectListKey in gObjectList) {
-      // eslint-disable-next-line no-prototype-builtins
-      if (gObjectList.hasOwnProperty(gObjectListKey)) {
-        const key = gObjectList[gObjectListKey];
-        const bb = !JSON.parse(key.DataString)[0] ? JSON.parse(key.DataString) : JSON.parse(key.DataString)[0][1];
-        const { Hash } = key;
-        const ColHash = key.CollateralHash;
-        const { ObjectType } = key;
-        const { CreationTime } = key;
-        const { AbsoluteYesCount } = key;
-        const { YesCount } = key;
-        const { NoCount } = key;
-        const { AbstainCount } = key;
-        const { fBlockchainValidity } = key;
-        const { IsValidReason } = key;
-        const { fCachedValid } = key;
-        const { fCachedFunding } = key;
-        const { fCachedDelete } = key;
-        const { fCachedEndorsed } = key;
-
-        const govList = {
-          Hash,
-          ColHash,
-          ObjectType,
-          CreationTime,
-          AbsoluteYesCount,
-          YesCount,
-          NoCount,
-          AbstainCount,
-          fBlockchainValidity,
-          IsValidReason,
-          fCachedValid,
-          fCachedFunding,
-          fCachedDelete,
-          fCachedEndorsed,
-        };
-
-        proposals.push({ ...govList, ...bb });
-        proposals.sort((a, b) => ((a.AbsoluteYesCount &lt; b.AbsoluteYesCount) ? 1 : -1));
-      }
-    }
-    // eslint-disable-next-line array-callback-return
-    proposals.map((elem) => {
-      const hidden = hiddenProposal.find((el) => el === elem.Hash);
-      if (typeof hidden === 'undefined') {
-        proposalResp.push(elem);
-      }
-    });
-
-    return res.status(200).json(proposalResp);
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * @function
- * @name info
- * @desc provides information about the current state of the block chain.
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {number} positive answer
- * @example 367.20
- */
-
-// eslint-disable-next-line consistent-return
-const info = async (req, res, next) => {
-  try {
-    // eslint-disable-next-line no-shadow
-    const info = await clientRPC
-      .callRpc('getblockchaininfo')
-      .call(true)
-      .catch((err) => {
-        throw err;
-      });
-
-    return res.status(200).json({ ok: true, BlockChainInfo: info });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * @function
- * @name getMiningInfo
- * @desc returns various mining-related information.
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {object} positive answer
- *
- * @example
- * {
-      "blocks": 292979,
-      "currentblocksize": 0,
-      "currentblocktx": 0,
-      "difficulty": 0.0002441371325370145,
-      "networkhashps": 3805.856874962192,
-      "pooledtx": 0,
-      "chain": "test",
-      "warnings": "Warning: unknown new rules activated (versionbit 3)"
-    }
- */
-// eslint-disable-next-line consistent-return
-const getMiningInfo = async (req, res, next) => {
-  try {
-    // eslint-disable-next-line no-shadow
-    const getMiningInfo = await clientRPC
-      .callRpc('getmininginfo')
-      .call(true)
-      .catch((err) => {
-        throw err;
-      });
-
-    return res.status(200).json(getMiningInfo);
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * @function
- * @name getGovernanceInfo
- * @desc returns an object containing governance parameters.
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {object} positive answer
- *
- * @example
- * {
-    "governanceminquorum": 1,
-    "proposalfee": 5.00000000,
-    "superblockcycle": 24,
-    "lastsuperblock": 250824,
-    "nextsuperblock": 250848
-    }
- */
-// eslint-disable-next-line consistent-return
-const getGovernanceInfo = async (req, res, next) => {
-  try {
-    // eslint-disable-next-line no-shadow
-    const getGovernanceInfo = await clientRPC
-      .callRpc('getgovernanceinfo')
-      .call()
-      .catch((err) => {
-        throw err;
-      });
-    console.log(getGovernanceInfo);
-    return res.status(200).json(getGovernanceInfo);
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * @function
- * @name getSuperBlockBudget
- * @desc returns the absolute maximum sum of superblock payments allowed.
- * @async
- * @method
- *
- * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
- * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {function} next errors caught and sent
- *
- * @return {number} positive answer
- * @example The absolute maximum sum of superblock payments allowed, in SYS
- */
-
-// eslint-disable-next-line consistent-return
-const getSuperBlockBudget = async (req, res, next) => {
-  try {
-    // eslint-disable-next-line no-shadow
-    const getGovernanceInfo = await clientRPC
-      .callRpc('getgovernanceinfo')
-      .call()
-      .catch((err) => {
-        throw err;
-      });
-
-    const { lastsuperblock, nextsuperblock } = getGovernanceInfo;
-
-    const getSuperBlockBudgetLast = await clientRPC
-      .callRpc('getsuperblockbudget', [lastsuperblock])
-      .call(true)
-      .catch((err) => {
-        throw err;
-      });
-
-    const getSuperBlockBudgetNext = await clientRPC
-      .callRpc('getsuperblockbudget', [nextsuperblock])
-      .call(true)
-      .catch((err) => {
-        throw err;
-      });
-
-    const lbs = { block: lastsuperblock, budget: getSuperBlockBudgetLast };
-    const nbs = { block: nextsuperblock, budget: getSuperBlockBudgetNext };
-    return res.status(200).json({ ok: true, lbs, nbs });
-  } catch (err) {
-    next(err);
-  }
-};
-
+            <pre class="prettyprint source linenums"><code>const crypto = require('crypto')
+const {
+  checkBodyEmpty,
+  checkDataMN,
+  validateAddress,
+} = require('../utils/helpers')
+const { clientRPC, admin } = require('../utils/config')
+const { encryptAes, decryptAes } = require('../utils/encrypt')
 /**
  * @function
  * @name getAllMasterNodesByUser
@@ -383,6 +44,7 @@ const getSuperBlockBudget = async (req, res, next) => {
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
+ * @param {string} req.query.hash hash of the vote search proposal
  * @param {function} next errors caught and sent
  *
  * @return {object} positive answer
@@ -392,29 +54,37 @@ const getSuperBlockBudget = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const getAllVotingAddressByUser = async (req, res, next) => {
   try {
-    const { hash } = req.query;
-    const nodes = [];
-    const votesResponse = {};
-    const votesArr = [];
-    const rdata = {};
+    const { hash } = req.query
+    const addresses = []
+    const votesResponse = {}
+    const votesArr = []
+    const rdata = {}
 
-    const user = await admin.firestore()
+    const {
+      _fieldsProto: user,
+      id,
+      _fieldsProto: { addressesList },
+    } = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
-      .get();
+      .get()
+      .catch((err) => {
+        throw err
+      })
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof user === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
-    if (user.id !== req.user) {
-      return res.status(406).json({
+
+    if (id !== req.user) {
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
 
     if (typeof hash !== 'undefined') {
@@ -422,121 +92,106 @@ const getAllVotingAddressByUser = async (req, res, next) => {
         .callRpc('gobject_getcurrentvotes', [hash])
         .call()
         .catch((err) => {
-          throw err;
-        });
+          throw err
+        })
 
-      // eslint-disable-next-line no-restricted-syntax
-      for (const key in votesData) {
-        // eslint-disable-next-line no-prototype-builtins
-        if (votesData.hasOwnProperty(key)) {
-          const data = {
-            txId: null,
-            timestamp: null,
-            vote: null,
-            funding: null,
-          };
-
-          // eslint-disable-next-line array-callback-return
-          Object.keys(data).map((k, i) => {
-            data[k] = votesData[key].split(':')[i];
-          });
-
-          votesArr.push(votesResponse[key] = data);
+      Object.keys(votesData).forEach((key) => {
+        const data = {
+          txId: null,
+          timestamp: null,
+          vote: null,
+          funding: null,
         }
-      }
+
+        Object.keys(data).forEach((k, i) => {
+          data[k] = votesData[key].split(':')[i]
+        })
+
+        votesArr.push((votesResponse[key] = data))
+      })
     }
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.mNodeList) {
-      // eslint-disable-next-line no-underscore-dangle
-      await Promise.all(user._fieldsProto.mNodeList.arrayValue.values.map(async (node) => {
-        // eslint-disable-next-line max-len
-        const n = await admin.firestore().collection(process.env.COLLECTION_NAME_ADDRESS).doc(node.stringValue).get();
-        const data = {};
-        data.uid = node.stringValue;
-        // eslint-disable-next-line no-restricted-syntax,no-underscore-dangle
-        for (const key in n._fieldsProto) {
-          // eslint-disable-next-line no-prototype-builtins,no-underscore-dangle
-          if (n._fieldsProto.hasOwnProperty(key)) {
-          //   if (key === 'proposalVotes') {
-          //     const hashVotes = [];
-          //     n._fieldsProto[key].arrayValue.values.map((hash) => {
-          //       const responseHash = {};
-          //       for (const key in hash.mapValue.fields) {
-          //         responseHash[key] = decryptAes(hash.mapValue.fields[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
-          //       }
-          //       hashVotes.push(responseHash);
-          //     });
-          //     data[key] = hashVotes;
-          //
-          //   } else
-            // eslint-disable-next-line no-underscore-dangle
-            if (!n._fieldsProto[key].timestampValue) {
-              // eslint-disable-next-line no-underscore-dangle
-              data[key] = decryptAes(n._fieldsProto[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
+    if (addressesList) {
+      const {
+        arrayValue: { values },
+      } = addressesList
+      await Promise.all(
+        values.map(async ({ stringValue }) => {
+          const { _fieldsProto: addrValue } = await admin
+            .firestore()
+            .collection(process.env.COLLECTION_NAME_ADDRESS)
+            .doc(stringValue)
+            .get()
+            .catch((err) => {
+              throw err
+            })
+          const data = {}
+          data.uid = stringValue
+          Object.keys(addrValue).forEach((key) => {
+            if (!addrValue[key].timestampValue) {
+              data[key] = decryptAes(
+                addrValue[key].stringValue,
+                process.env.KEY_FOR_ENCRYPTION,
+              )
             } else {
-              // eslint-disable-next-line no-underscore-dangle
-              data[key] = Number(n._fieldsProto[key].timestampValue.seconds);
+              data[key] = Number(addrValue[key].timestampValue.nanos)
             }
-          }
-        }
-        nodes.push(data);
-      })).catch((err) => {
-        throw err;
-      });
+          })
+          addresses.push(data)
+        }),
+      ).catch((err) => {
+        throw err
+      })
 
       if (hash !== 'undefined') {
         const votesFiltered = votesArr
-          .filter((v) => nodes.find((e) => e.txId === v.txId))
+          .filter((v) => addresses.find((e) => e.txId === v.txId))
           .reduce((acc, item) => {
             if (!acc[item.txId]) {
-              acc[item.txId] = [];
+              acc[item.txId] = []
             }
-            acc[item.txId].push(item);
-            return acc;
-          }, {});
+            acc[item.txId].push(item)
+            return acc
+          }, {})
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const votesFilteredKey in votesFiltered) {
-          // eslint-disable-next-line no-prototype-builtins
-          if (votesFiltered.hasOwnProperty(votesFilteredKey)) {
-            rdata[votesFilteredKey] = votesFiltered[votesFilteredKey].find((el) => Math.max(Number(el.timestamp)));
-          }
-        }
-        // eslint-disable-next-line array-callback-return
-        nodes.map((e) => {
-          // eslint-disable-next-line guard-for-in,no-restricted-syntax
-          for (const y in rdata) {
-            rdata[y].hash = hash;
-            if (e.txId === y) {
-              if (rdata[y].vote === 'yes') {
-                rdata[y].vote = '1';
-              } else if (rdata[y].vote === 'no') {
-                rdata[y].vote = '2';
-              } else if (rdata[y].vote === 'abstain') {
-                rdata[y].vote = '3';
+        Object.keys(votesFiltered).forEach((key) => {
+          rdata[key] = votesFiltered[key].find((el) => Math.max(Number(el.timestamp)))
+        })
+
+        addresses.forEach((e) => {
+          Object.keys(rdata).forEach((v) => {
+            rdata[v].hash = hash
+            if (e.txId === v) {
+              if (rdata[v].vote === 'yes') {
+                rdata[v].vote = '1'
+              } else if (rdata[v].vote === 'no') {
+                rdata[v].vote = '2'
+              } else if (rdata[v].vote === 'abstain') {
+                rdata[v].vote = '3'
               }
-              e.proposalVotes = [{ ...rdata[y] }];
+              e.proposalVotes = [{ ...rdata[v] }]
             }
-          }
-          return e;
-        });
+            return e
+          })
+        })
       }
 
-      nodes.sort((x, y) => x.date - y.date);
+      addresses.sort((x, y) => x.date - y.date)
 
-      return res.status(200).json({ ok: true, nodes: nodes.reverse() });
+      return res.status(200).json({ ok: true, nodes: addresses.reverse() })
     }
-    return res.status(204).json({ ok: false, message: 'There are no associated Voting Address' });
+    return res
+      .status(204)
+      .json({ ok: false, message: 'There are no associated Voting Address' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
- * @name getMasterNode
- * @desc get data from a masterNode
+ * @name getVotingAddress
+ * @desc get data from a voting address
  * @async
  * @method
  *
@@ -553,81 +208,89 @@ const getAllVotingAddressByUser = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const getVotingAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    let existMasterNodeInUser;
-    const decryptData = {};
+    const { id } = req.params
+    let existMasterNodeInUser
+    const decryptData = {}
 
-    const user = await admin.firestore()
+    const {
+      _fieldsProto: user,
+      _fieldsProto: { addressesList },
+    } = await admin
+      .firestore()
       .collection(process.env.COLLECTION_NAME_USERS)
       .doc(req.user)
       .get()
       .catch((err) => {
-        throw err;
-      });
+        throw err
+      })
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof user === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
-    if (user.id !== req.user) {
-      return res.status(406).json({
-        ok: false,
-        message: 'you do not have permissions to perform this action',
-      });
-    }
-    // eslint-disable-next-line no-underscore-dangle,max-len
-    if (typeof user._fieldsProto.mNodeList !== 'undefined' &amp;&amp; user._fieldsProto.mNodeList.arrayValue.values.length > 0) {
-      // eslint-disable-next-line no-underscore-dangle
-      if (typeof user._fieldsProto.mNodeList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
-        return res.status(406).json({
+
+    if (
+      typeof addressesList !== 'undefined'
+      &amp;&amp; addressesList.arrayValue.values.length > 0
+    ) {
+      if (
+        typeof addressesList.arrayValue.values.find(
+          (e) => e.stringValue === id,
+        ) === 'undefined'
+      ) {
+        return res.status(403).json({
           ok: false,
           message: 'you do not have permissions to perform this action',
-        });
+        })
       }
 
-      // eslint-disable-next-line no-underscore-dangle,max-len
-      existMasterNodeInUser = user._fieldsProto.mNodeList.arrayValue.values.find((element) => element.stringValue === id);
+      existMasterNodeInUser = addressesList.arrayValue.values.find(
+        (element) => element.stringValue === id,
+      )
 
       if (typeof existMasterNodeInUser !== 'undefined') {
-        const { _fieldsProto } = await admin.firestore()
+        const { _fieldsProto: fieldsProto } = await admin
+          .firestore()
           .collection(process.env.COLLECTION_NAME_ADDRESS)
           .doc(id)
           .get()
           .catch((err) => {
-            throw err;
-          });
+            throw err
+          })
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const key in _fieldsProto) {
-          // eslint-disable-next-line no-prototype-builtins
-          if (_fieldsProto.hasOwnProperty(key)) {
-            if (key !== 'date') {
-              decryptData[key] = decryptAes(_fieldsProto[key].stringValue, process.env.KEY_FOR_ENCRYPTION);
-            } else if (key === 'date') {
-              decryptData[key] = Number(_fieldsProto[key].timestampValue.seconds);
-            } else {
-              decryptData[key] = _fieldsProto[key].timestampValue.seconds;
-            }
+        Object.keys(fieldsProto).forEach((key) => {
+          if (key !== 'date') {
+            decryptData[key] = decryptAes(
+              fieldsProto[key].stringValue,
+              process.env.KEY_FOR_ENCRYPTION,
+            )
+          } else if (key === 'date') {
+            decryptData[key] = Number(fieldsProto[key].timestampValue.seconds)
+          } else {
+            decryptData[key] = fieldsProto[key].timestampValue.seconds
           }
-        }
+        })
 
-        return res.status(200).json({ ok: true, ndNode: decryptData });
+        return res.status(200).json({ ok: true, ndNode: decryptData })
       }
-      return res.status(204).json({ ok: true, message: 'Unknown Voting Address' });
+      return res
+        .status(204)
+        .json({ ok: true, message: 'Unknown Voting Address' })
     }
-    return res.status(204).json({ ok: true, message: 'It does not have associated Voting Address' });
+    return res
+      .status(204)
+      .json({ ok: true, message: 'It does not have associated Voting Address' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
- * @name createMasterNode
- * @desc create a new masterNode
+ * @name createVotingAddress
+ * @desc create a new voting address
  * @async
  * @method
  *
@@ -637,8 +300,8 @@ const getVotingAddress = async (req, res, next) => {
  * @param {object} req.body.name name or ip
  * @param {object} req.body.address
  * @param {object} req.body.privateKey
- * @param {object} req.body.txId Fee transaction ID
- * @param {object} req.body.listMN masterNode list from masternode.conf - Not available in version 4.2
+ * @param {object} req.body.txId collateralHash and collateralIndex
+ * @param {object} req.body.listMN masterNode list from masternode.conf - Not available in version 4.2, use protx_list_wallet 1 in console the Syscoin-qt
  * @param {function} next errors caught and sent
  *
  * @return {object} positive answer
@@ -647,119 +310,228 @@ const getVotingAddress = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const createVotingAddress = async (req, res, next) => {
   try {
-    if (checkBodyEmpty(req.body)) return res.status(406).json({ ok: false, message: 'Required fields' });
+    if (checkBodyEmpty(req.body)) {
+      return res.status(406).json({ ok: false, message: 'Required fields' })
+    }
+
     const {
       name, address, privateKey, txId, listMN,
-    } = req.body;
-    const file = req.files;
-    const nodes = [];
-    // const accNodes = 0;
-    const dataEncrypt = class {
-      // eslint-disable-next-line consistent-return,class-methods-use-this
-      async encryptMasterNode(mn) {
-        const encrypted = {};
-        if (checkMN(mn)) {
-          // eslint-disable-next-line no-restricted-syntax
-          for (const rpcServicesKey in mn) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (mn.hasOwnProperty(rpcServicesKey)) {
-              encrypted[rpcServicesKey] = encryptAes(mn[rpcServicesKey], process.env.KEY_FOR_ENCRYPTION);
-              encrypted.date = admin.firestore.Timestamp.now();
-            }
-          }
-          return encrypted;
-        }
-      }
-    };
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    } = req.body
+
+    const re = /['"]+/g
+    let serializedArray = []
+    const addresses = []
+    const addressesInvalid = []
+    const aggregateAddresses = []
+    const {
+      _fieldsProto: user,
+      _fieldsProto: { addressesList },
+    } = await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+      .catch((err) => {
+        throw err
+      })
+
+    if (typeof user === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.mNodeList) {
-      // eslint-disable-next-line no-underscore-dangle,array-callback-return
-      user._fieldsProto.mNodeList.arrayValue.values.map((node) => {
-        nodes.push(node.stringValue);
-      });
+
+    const currentMN = await clientRPC
+      .callRpc('masternode_list')
+      .call()
+      .catch((err) => {
+        throw err
+      })
+
+    // eslint-disable-next-line max-len
+    const votingAddressCurrentMns = Object.keys(currentMN).reduce(
+      (acc, el) => acc.concat(currentMN[el].votingaddress),
+      [],
+    )
+
+    if (addressesList) {
+      const {
+        arrayValue: { values: addrValues },
+      } = addressesList
+      addrValues.forEach((addr) => {
+        addresses.push(addr.stringValue)
+      })
     }
-    if (listMN) {
-      return res.status(418).json({ ok: false, message: 'it is not possible to process this request' });
-      // const lines = listMN.split(/\r*\n/);
-      // const commentsRemoved = lines.filter((line) => line[0] !== '#');
-      // await Promise.all(commentsRemoved.map(async (mn) => {
-      //   const lineArray = mn.split(' ');
-      //   if (lineArray.length === 5) {
-      //     const newMN = {
-      //       name: lineArray[0].trim(),
-      //       privateKey: lineArray[2].trim(),
-      //       txId: `${lineArray[3].trim()}-${lineArray[4].trim()}`,
-      //     };
-      //     const encryptedMN = await dataEncrypt.prototype.encryptMasterNode(newMN);
-      //     const resp = await admin.firestore().collection(process.env.COLLECTION_NAME_ADDRESS).add(encryptedMN);
-      //     nodes.push(resp._path.id);
-      //     accNodes = accNodes++;
-      //   }
-      // }));
-      // await admin.firestore().doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`).update('mNodeList', nodes);
-      // const info = await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).get();
-      // await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).update({ nMnodes: Number(info._fieldsProto.nMnodes.integerValue) + accNodes });
-    }
+
     if (!listMN) {
       if (!name || !address || !privateKey || !txId) {
         return res.status(406).json({
           ok: false,
           message: 'Required fields',
-        });
+        })
       }
-      const mn = {
-        name: name.trim(),
-        address: address.trim(),
-        privateKey: privateKey.trim(),
-        txId: txId.trim(),
-      };
-      if (!checkMN(mn)) return res.status(406).json({ ok: false, message: 'mn invalid' });
-      const encryptedMN = await dataEncrypt.prototype.encryptMasterNode(mn);
-      const resp = await admin.firestore()
-        .collection(process.env.COLLECTION_NAME_ADDRESS)
-        .add(encryptedMN);
-      // eslint-disable-next-line no-underscore-dangle
-      nodes.push(resp._path.id);
-      await admin.firestore()
-        .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
-        .update('mNodeList', nodes);
-      // eslint-disable-next-line no-shadow
-      const info = await admin.firestore()
-        .collection(process.env.COLLECTION_NAME_INFO)
-        .doc(process.env.COLLECTION_INFO_UID)
-        .get();
-      await admin.firestore()
-        .collection(process.env.COLLECTION_NAME_INFO)
-        .doc(process.env.COLLECTION_INFO_UID)
-        // eslint-disable-next-line no-underscore-dangle
-        .update({ nMnodes: Number(info._fieldsProto.nMnodes.integerValue) + 1 });
-    } else if (file) {
-      console.log('file');
     }
-    return res.status(200).json({ ok: false, message: 'created voting address' });
+
+    const resp = await Promise.all(
+      addresses.map(async (addr) => {
+        // eslint-disable-next-line no-shadow
+        const {
+          _fieldsProto: { name, address: addrUser },
+        } = await admin
+          .firestore()
+          .collection(process.env.COLLECTION_NAME_ADDRESS)
+          .doc(addr)
+          .get()
+          .catch((err) => {
+            throw err
+          })
+        return {
+          name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
+          address: decryptAes(
+            addrUser.stringValue,
+            process.env.KEY_FOR_ENCRYPTION,
+          ),
+        }
+      }),
+    )
+
+    if (!listMN) {
+      const newAddress = {
+        name: `${name.replace(re, '')}`.trim(),
+        address: `${address.replace(re, '')}`.trim(),
+        privateKey: `${privateKey.replace(re, '')}`.trim(),
+        txId: `${txId.replace(re, '')}`.trim(),
+      }
+      const existInMn = votingAddressCurrentMns.find(
+        (addr) => addr === newAddress.address,
+      )
+      const isExist = resp.find((e) => e.address === newAddress.address)
+      const verifyName = resp.find((e) => e.name === newAddress.name)
+      if (typeof verifyName !== 'undefined') {
+        newAddress.name = `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+      }
+
+      if (typeof isExist === 'undefined' &amp;&amp; typeof existInMn !== 'undefined') {
+        aggregateAddresses.push(newAddress)
+      }
+    } else {
+      if (Array.isArray(listMN) === false) {
+        return res.status(406).json({ ok: false, message: 'invalid format' })
+      }
+      serializedArray = [...new Set(listMN.map(JSON.stringify))].map(JSON.parse)
+
+      serializedArray.forEach((e) => {
+        const {
+          label,
+          votingAddress,
+          votingKey,
+          collateralHash,
+          collateralIndex,
+        } = e
+
+        const newVotingAddress = {
+          name: `${label}`.trim(),
+          address: `${votingAddress}`.trim(),
+          privateKey: `${votingKey}`.trim(),
+          txId: `${collateralHash}-${collateralIndex}`.trim(),
+        }
+        const existInMn = votingAddressCurrentMns.find(
+          (addr) => addr === newVotingAddress.address,
+        )
+        const isExist = resp.find(
+          (el) => el.address === newVotingAddress.address,
+        )
+        const verifyName = resp.find((el) => el.name === newVotingAddress.name)
+
+        if (typeof verifyName !== 'undefined') {
+          newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+        }
+
+        if (aggregateAddresses.length > 0) {
+          const verifyNameInAddresses = aggregateAddresses.find(
+            (el) => el.name === newVotingAddress.name,
+          )
+          if (typeof verifyNameInAddresses !== 'undefined') {
+            newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+          }
+        }
+
+        if (
+          typeof isExist === 'undefined'
+          &amp;&amp; typeof existInMn !== 'undefined'
+        ) {
+          aggregateAddresses.push(newVotingAddress)
+        }
+      })
+    }
+
+    if (aggregateAddresses.length === 0) {
+      return res
+        .status(200)
+        .json({ ok: true, message: 'There are no new voting addresses to add' })
+    }
+
+    await Promise.all(
+      aggregateAddresses.map(async (data) => {
+        if (checkDataMN(data) === true) {
+          Object.keys(data).forEach((key) => {
+            // eslint-disable-next-line no-param-reassign
+            data[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION)
+          })
+          // eslint-disable-next-line no-param-reassign
+          data.date = admin.firestore.Timestamp.now()
+          const {
+            _path: { id },
+          } = await admin
+            .firestore()
+            .collection(process.env.COLLECTION_NAME_ADDRESS)
+            .add(data)
+            .catch((err) => {
+              throw err
+            })
+          addresses.push(id)
+        } else {
+          addressesInvalid.push(data)
+        }
+      }),
+    ).catch((err) => {
+      throw err
+    })
+    await admin
+      .firestore()
+      .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
+      .update('addressesList', addresses)
+      .catch((err) => {
+        throw err
+      })
+
+    return res
+      .status(200)
+      .json({ ok: true, message: 'Data saved successfully', addressesInvalid })
   } catch (err) {
-    next(err);
+    if (err.message === 'Unexpected end of JSON input') {
+      return res
+        .status(406)
+        .json({
+          ok: false,
+          message: 'Invalid format, Please verify the data and try again',
+        })
+    }
+    next(err)
   }
-};
+}
 
 /**
  * @function
- * @name updateMaterNode
+ * @name updateVotingAddress
  * @desc update data from a masterNode - Voting Address
  * @async
  * @method
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {string} req.params.id uid of the masterNode saved in the firebase collection
+ * @param {string} req.params.id uid of the voting address saved in the firebase collection
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
  * @param {object} req.body.data data obtained from the front for update
  * @param {function} next errors caught and sent
@@ -769,53 +541,109 @@ const createVotingAddress = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const updateVotingAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { data } = req.body;
-    const dataEncrypt = {};
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
+    const { id } = req.params
+    const { data } = req.body
+    const dataEncrypt = {}
+    const re = /['"]+/g
+    const { _fieldsProto: fieldsProto } = await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+      .catch((err) => {
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
-    // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto.mNodeList.arrayValue.values.find((e) => e.stringValue === id) === 'undefined') {
-      return res.status(406).json({
+
+    if (
+      typeof fieldsProto.addressesList.arrayValue.values.find(
+        (e) => e.stringValue === id,
+      ) === 'undefined'
+    ) {
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
-    // if (user.id !== req.user) return res.status(406).json({ok: false, message: 'you do not have permissions to perform this action'})
-    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' });
-    if (!checkMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' });
-    // eslint-disable-next-line guard-for-in,no-restricted-syntax
-    for (const key in data) {
-      dataEncrypt[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION);
+
+    const addresses = await Promise.all(
+      fieldsProto.addressesList.arrayValue.values.map(async (addr) => {
+        const {
+          _fieldsProto: { name, address: addrUser },
+        } = await admin
+          .firestore()
+          .collection(process.env.COLLECTION_NAME_ADDRESS)
+          .doc(addr.stringValue)
+          .get()
+          .catch((err) => {
+            throw err
+          })
+        return {
+          name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
+          address: decryptAes(
+            addrUser.stringValue,
+            process.env.KEY_FOR_ENCRYPTION,
+          ),
+        }
+      }),
+    )
+
+    // eslint-disable-next-line max-len
+    if (
+      typeof addresses.find((addrItem) => addrItem.name === data.name)
+        !== 'undefined'
+      &amp;&amp; addresses.filter(
+        (addrItem) => addrItem.name === data.name &amp;&amp; addrItem.address !== data.address,
+      ).length > 0
+    ) {
+      if (!data.name.split('-')[1]) {
+        data.name = `${data.name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+      }
     }
-    await admin.firestore()
+
+    // if (user.id !== req.user) return res.status(406).json({ ok: false, message: 'you do not have permissions to perform this action' });
+    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' })
+    if (!checkDataMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' })
+    const validateAddr = await validateAddress(data.address)
+    if (!validateAddr) {
+      return res.status(400).json({
+        ok: false,
+        message: 'invalid address',
+      })
+    }
+    Object.keys(data).forEach((key) => {
+      dataEncrypt[key] = encryptAes(data[key], process.env.KEY_FOR_ENCRYPTION)
+    })
+
+    await admin
+      .firestore()
       .doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`)
       .update(dataEncrypt)
       .catch((err) => {
-        throw err;
-      });
-    return res.status(200).json({ ok: true, message: 'Voting Address Updated' });
+        throw err
+      })
+    return res.status(200).json({ ok: true, message: 'Voting Address Updated' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 /**
  * @function
- * @name destroyMasterNode
+ * @name destroyVotingAddress
  * @desc remove a address from db
  * @async
  * @method
  *
  * @param {object} req The req object represents the HTTP request and has properties for the request query string, parameters, body, HTTP headers, and so on.
  * @param {object} res The res object represents the HTTP response that an Express app sends when it gets an HTTP request.
- * @param {string} req.params.id is an opaque identifier for a user account.
+ * @param {string} req.params.id uid of the voting address saved in the firebase collection
  * @param {string} req.user is an opaque identifier for a user account obtained from the token.
  * @param {function} next errors caught and sent
  *
@@ -824,54 +652,72 @@ const updateVotingAddress = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const destroyVotingAddress = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const nodes = [];
-    let existMasterNodeInUser;
-    const user = await admin.firestore().collection(process.env.COLLECTION_NAME_USERS).doc(req.user).get();
+    const { id } = req.params
+    const addresses = []
+    let existMasterNodeInUser
+    const { _fieldsProto: fieldsProto, id: uid } = await admin
+      .firestore()
+      .collection(process.env.COLLECTION_NAME_USERS)
+      .doc(req.user)
+      .get()
+      .catch((err) => {
+        throw err
+      })
     // eslint-disable-next-line no-underscore-dangle
-    if (typeof user._fieldsProto === 'undefined') {
+    if (typeof fieldsProto === 'undefined') {
       return res.status(406).json({
         ok: false,
         message: 'non-existent user',
-      });
+      })
     }
-    if (user.id !== req.user) {
-      return res.status(406).json({
+    if (uid !== req.user) {
+      return res.status(403).json({
         ok: false,
         message: 'you do not have permissions to perform this action',
-      });
+      })
     }
-    // eslint-disable-next-line no-underscore-dangle
-    if (user._fieldsProto.mNodeList.arrayValue.values.length > 0) {
-      // eslint-disable-next-line no-underscore-dangle,max-len
-      existMasterNodeInUser = user._fieldsProto.mNodeList.arrayValue.values.find((element) => element.stringValue === id);
+    if (fieldsProto.addressesList.arrayValue.values.length > 0) {
+      existMasterNodeInUser = fieldsProto.addressesList.arrayValue.values.find(
+        (element) => element.stringValue === id,
+      )
       if (typeof existMasterNodeInUser !== 'undefined') {
-        // eslint-disable-next-line no-underscore-dangle,array-callback-return
-        user._fieldsProto.mNodeList.arrayValue.values.map((node) => {
-          nodes.push(node.stringValue);
-        });
-        const index = nodes.findIndex((element) => element === existMasterNodeInUser.stringValue);
-        nodes.splice(index, 1);
-        // eslint-disable-next-line max-len
-        await admin.firestore().doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`).update('mNodeList', nodes).catch((err) => {
-          throw err;
-        });
-        await admin.firestore().doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`).delete().catch((err) => {
-          throw err;
-        });
-        // eslint-disable-next-line no-shadow,max-len
-        const info = await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).get();
-        // eslint-disable-next-line no-underscore-dangle,max-len
-        await admin.firestore().collection(process.env.COLLECTION_NAME_INFO).doc(process.env.COLLECTION_INFO_UID).update({ nMnodes: Number(info._fieldsProto.nMnodes.integerValue) - 1 });
-        return res.status(200).json({ ok: true, message: 'Voting Address Deleted' });
+        // eslint-disable-next-line array-callback-return
+        fieldsProto.addressesList.arrayValue.values.map((node) => {
+          addresses.push(node.stringValue)
+        })
+        const index = addresses.findIndex(
+          (element) => element === existMasterNodeInUser.stringValue,
+        )
+        addresses.splice(index, 1)
+        await admin
+          .firestore()
+          .doc(`${process.env.COLLECTION_NAME_USERS}/${req.user}`)
+          .update('addressesList', addresses)
+          .catch((err) => {
+            throw err
+          })
+        await admin
+          .firestore()
+          .doc(`${process.env.COLLECTION_NAME_ADDRESS}/${id}`)
+          .delete()
+          .catch((err) => {
+            throw err
+          })
+        return res
+          .status(200)
+          .json({ ok: true, message: 'Voting Address Deleted' })
       }
-      return res.status(204).json({ ok: true, message: 'Voting Address Deleted' });
+      return res
+        .status(204)
+        .json({ ok: true, message: 'Voting Address Deleted' })
     }
-    return res.status(204).json({ ok: true, message: 'It does not have associated Masternodes' });
+    return res
+      .status(204)
+      .json({ ok: true, message: 'It does not have associated Masternodes' })
   } catch (err) {
-    next(err);
+    next(err)
   }
-};
+}
 
 // eslint-disable-next-line consistent-return
 // const masterNodeVoteIn = async (req, res, next) => {
@@ -999,18 +845,12 @@ const destroyVotingAddress = async (req, res, next) => {
 // };
 
 module.exports = {
-  countMasterNodes,
-  list,
-  info,
-  getMiningInfo,
-  getGovernanceInfo,
-  getSuperBlockBudget,
   getAllVotingAddressByUser,
   getVotingAddress,
   createVotingAddress,
   updateVotingAddress,
   destroyVotingAddress,
-};
+}
 </code></pre>
         </article>
     </section>
@@ -1021,13 +861,13 @@ module.exports = {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#check">check</a></li><li><a href="global.html#countMasterNodes">countMasterNodes</a></li><li><a href="global.html#createHiddenProposal">createHiddenProposal</a></li><li><a href="global.html#createMasterNode">createMasterNode</a></li><li><a href="global.html#deleteHiddenProposal">deleteHiddenProposal</a></li><li><a href="global.html#deleteProposal">deleteProposal</a></li><li><a href="global.html#deleteUser">deleteUser</a></li><li><a href="global.html#destroyMasterNode">destroyMasterNode</a></li><li><a href="global.html#firebaseAuthenticated">firebaseAuthenticated</a></li><li><a href="global.html#getAllHiddenProposal">getAllHiddenProposal</a></li><li><a href="global.html#getAllMasterNodesByUser">getAllMasterNodesByUser</a></li><li><a href="global.html#getAllUser">getAllUser</a></li><li><a href="global.html#getGovernanceInfo">getGovernanceInfo</a></li><li><a href="global.html#getMasterNode">getMasterNode</a></li><li><a href="global.html#getMiningInfo">getMiningInfo</a></li><li><a href="global.html#getOneProposal">getOneProposal</a></li><li><a href="global.html#getOneUser">getOneUser</a></li><li><a href="global.html#getProposalsPendingByUser">getProposalsPendingByUser</a></li><li><a href="global.html#getSuperBlockBudget">getSuperBlockBudget</a></li><li><a href="global.html#getUser2fa">getUser2fa</a></li><li><a href="global.html#info">info</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#prepare">prepare</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#submit">submit</a></li><li><a href="global.html#updateActionsUser">updateActionsUser</a></li><li><a href="global.html#updateMaterNode">updateMaterNode</a></li><li><a href="global.html#updateProposal">updateProposal</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#verifyClient">verifyClient</a></li><li><a href="global.html#vote">vote</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#check">check</a></li><li><a href="global.html#countMasterNodes">countMasterNodes</a></li><li><a href="global.html#createAdmin">createAdmin</a></li><li><a href="global.html#createHiddenProposal">createHiddenProposal</a></li><li><a href="global.html#createQuestions">createQuestions</a></li><li><a href="global.html#createVotingAddress">createVotingAddress</a></li><li><a href="global.html#deleteAdmin">deleteAdmin</a></li><li><a href="global.html#deleteHiddenProposal">deleteHiddenProposal</a></li><li><a href="global.html#deleteProposal">deleteProposal</a></li><li><a href="global.html#deleteQuestions">deleteQuestions</a></li><li><a href="global.html#deleteUser">deleteUser</a></li><li><a href="global.html#destroyVotingAddress">destroyVotingAddress</a></li><li><a href="global.html#firebaseAuthenticated">firebaseAuthenticated</a></li><li><a href="global.html#getALlQuestions">getALlQuestions</a></li><li><a href="global.html#getAllAdmins">getAllAdmins</a></li><li><a href="global.html#getAllHiddenProposal">getAllHiddenProposal</a></li><li><a href="global.html#getAllMasterNodesByUser">getAllMasterNodesByUser</a></li><li><a href="global.html#getAllUser">getAllUser</a></li><li><a href="global.html#getCurrentQuestions">getCurrentQuestions</a></li><li><a href="global.html#getGovernanceInfo">getGovernanceInfo</a></li><li><a href="global.html#getMiningInfo">getMiningInfo</a></li><li><a href="global.html#getOneProposal">getOneProposal</a></li><li><a href="global.html#getOneUser">getOneUser</a></li><li><a href="global.html#getProposalsPendingByUser">getProposalsPendingByUser</a></li><li><a href="global.html#getQuestions">getQuestions</a></li><li><a href="global.html#getSuperBlockBudget">getSuperBlockBudget</a></li><li><a href="global.html#getUser2fa">getUser2fa</a></li><li><a href="global.html#getVotingAddress">getVotingAddress</a></li><li><a href="global.html#info">info</a></li><li><a href="global.html#list">list</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#masterNodes">masterNodes</a></li><li><a href="global.html#prepare">prepare</a></li><li><a href="global.html#register">register</a></li><li><a href="global.html#stats">stats</a></li><li><a href="global.html#submit">submit</a></li><li><a href="global.html#updateActionsUser">updateActionsUser</a></li><li><a href="global.html#updateProposal">updateProposal</a></li><li><a href="global.html#updateQuestions">updateQuestions</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#updateVotingAddress">updateVotingAddress</a></li><li><a href="global.html#usersApp">usersApp</a></li><li><a href="global.html#verifyClient">verifyClient</a></li><li><a href="global.html#vote">vote</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Tue Jan 19 2021 11:47:52 GMT-0400 (Venezuela Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Feb 24 2025 22:57:07 GMT+0800 (GMT+08:00)
 </footer>
 
 <script> prettyPrint(); </script>
