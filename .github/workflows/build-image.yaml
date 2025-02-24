@@ -25,12 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the React app
-        env:
-          REACT_APP_FIREBASE_DOMAIN: ${{ secrets.REACT_APP_FIREBASE_DOMAIN }}
-          REACT_APP_FIREBASE_KEY: ${{ secrets.REACT_APP_FIREBASE_KEY }}
-          REACT_APP_FIREBASE_PROJECT_ID: ${{ secrets.REACT_APP_FIREBASE_PROJECT_ID }}
-        run: npm run build
+      - name: Build the Docs
+        run: npm run doc
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
