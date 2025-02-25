@@ -1,16 +1,10 @@
 const dotEnv = require('dotenv').config()
-const os = require('os')
-const path = require('path')
 const express = require('express')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
 const helmet = require('helmet')
-const https = require('https')
-const forceSsl = require('express-force-ssl')
 const compression = require('compression')
-const pem = require('pem')
-const greenlock = require('greenlock-express')
 const routes = require('./routes/index')
 
 const app = express()
@@ -27,7 +21,6 @@ app.use(cors())
 app.use(helmet())
 app.use(compression())
 routes.disable('x-powered-by')
-app.use(globalCSP)
 /** If you are in development environment comment this line * */
 // app.use(forceSsl);
 // app.set('views', path.join(__dirname, 'views'));
