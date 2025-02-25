@@ -12,7 +12,6 @@ const compression = require('compression')
 const pem = require('pem')
 const greenlock = require('greenlock-express')
 const routes = require('./routes/index')
-const { globalCSP, certificate } = require('./utils/config')
 
 const app = express()
 
@@ -63,24 +62,4 @@ app.use((err, req, res, next) => {
  * @return `server on port 3000 or port`
  * */
 
-if (process.env.NODE_ENV === 'dev') {
-  /**  use only in case you need to do tests with https or uploads to production * */
-  // if (os.platform() === 'win32') {
-  //   process.env.OPENSSL_CONF = path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.cnf');
-  //   pem.config({
-  //     pathOpenSSL: path.join(__dirname, 'certificates/openssl', 'windows', 'openssl.exe'),
-  //   });
-  // }
-  //
-  // pem.createCertificate({ days: 1, selfSigned: true }, (err, keys) => {
-  //   if (err) {
-  //     throw err;
-  //   }
-  //   https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT_HTTPS || 3000, () => console.log('server on port 3000'));
-  // });
-  app.listen(process.env.PORT_HTTP || 3001, () => console.log(`server on port ${process.env.PORT_HTTP || 3000}`))
-} else {
-  https
-    .createServer(certificate, app)
-    .listen(process.env.PORT_HTTPS || 3001, () => console.log(`server on port ${process.env.PORT_HTTPS || 3001}`))
-}
+app.listen(process.env.PORT_HTTP || 3000, () => console.log(`server on port ${process.env.PORT_HTTP || 3000}`))
