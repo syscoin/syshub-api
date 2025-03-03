@@ -26,6 +26,8 @@ const getCurrentQuestions = async (req, res, next) => {
         throw err
       })
 
+    console.log('docs', docs, process.env.COLLECTION_NAME_FAQ)
+
     docs.forEach((data) => {
       const {
         _fieldsProto: {
