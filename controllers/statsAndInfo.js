@@ -60,9 +60,7 @@ const { clientRPC, admin } = require('../utils/config')
 // eslint-disable-next-line consistent-return
 const masterNodes = async (req, res, next) => {
   try {
-    const {
-      page, sortBy, sortDesc, perPage,
-    } = req.query
+    const { page, sortBy, sortDesc, perPage } = req.query
     let { search } = req.query
     if (typeof search !== 'undefined') {
       search.replace(/ /g, '')
@@ -104,8 +102,8 @@ const masterNodes = async (req, res, next) => {
     for (const masternode of masternodesArr) {
       // search filter
       if (
-        masternode.address.split(':')[0].includes(newSearch)
-        || masternode.payee.toUpperCase().includes(newSearch.toUpperCase())
+        masternode.address.split(':')[0].includes(newSearch) ||
+        masternode.payee.toUpperCase().includes(newSearch.toUpperCase())
       ) {
         const pushObj = { ...masternode }
         if (pushObj.lastpaidtime === 0) {
@@ -115,20 +113,10 @@ const masterNodes = async (req, res, next) => {
           pushObj.lastpaidtimeS = pushObj.lastpaidtime
           pushObj.lastpaidtime = moment.unix(pushObj.lastpaidtime).fromNow()
         }
-        // pushObj.lastseenS = pushObj.lastseen;
-        // pushObj.lastseen = moment.unix(pushObj.lastseen).fromNow();
-        // if (pushObj.activeseconds < 0) {
-        //   pushObj.activeseconds = 0;
-        // }
-        // pushObj.activesecondsS = pushObj.activeseconds;
-        // pushObj.activeseconds = ms(pushObj.activeseconds * 1000);
-        // if (pushObj.activeseconds.includes('d')) {
-        //   pushObj.activeseconds = `${pushObj.activeseconds.split('m')[0]}m`;
-        // }
         filteredMN.push(pushObj)
       }
     }
-    
+
     if (sortBy === 'lastPayment') {
       filteredMN.sort((a, b) => a.lastpaidtimeS - b.lastpaidtimeS)
     } else {
@@ -325,7 +313,9 @@ const list = async (req, res, next) => {
         }
 
         proposals.push({ ...govList, ...bb })
-        proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount ? 1 : -1))
+        proposals.sort((a, b) =>
+          a.AbsoluteYesCount < b.AbsoluteYesCount ? 1 : -1
+        )
       }
     }
     // eslint-disable-next-line array-callback-return
@@ -1025,7 +1015,10 @@ const stats = async (req, res, next) => {
       }
     })
 
-    highestMN = Object.values(mapData).reduce((a, b) => (a < b.masternodes ? b.masternodes : a), highestMN)
+    highestMN = Object.values(mapData).reduce(
+      (a, b) => (a < b.masternodes ? b.masternodes : a),
+      highestMN
+    )
 
     Object.keys(mapData).forEach((key) => {
       const heatLevel = Math.round((255 * mapData[key].masternodes) / highestMN)
@@ -1050,7 +1043,7 @@ const stats = async (req, res, next) => {
       },
     } = await axios
       .get(
-        'https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true',
+        'https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true'
       )
       .catch((err) => {
         throw err
@@ -1143,7 +1136,7 @@ const stats = async (req, res, next) => {
     const currentDate = Date.now()
     const superBlockDate = currentDate + workOutTime
     const superBlockNextDate = moment(superBlockDate).format(
-      'MMMM Do YYYY, h:mm:ss a',
+      'MMMM Do YYYY, h:mm:ss a'
     )
 
     // Get Date of Voting Deadline
@@ -1152,7 +1145,9 @@ const stats = async (req, res, next) => {
     const voteDeadTime = votingDeadline - block
     const votingTime = voteDeadTime * avgBlockTime
     const voteDate = currentDate + votingTime
-    const votingDeadlineDate = moment(voteDate).format('MMMM Do YYYY, h:mm:ss a')
+    const votingDeadlineDate = moment(voteDate).format(
+      'MMMM Do YYYY, h:mm:ss a'
+    )
 
     // Get Next 5 Superblocks
     const sbCounter = 43800
@@ -1235,8 +1230,30 @@ const stats = async (req, res, next) => {
     const sbTotal = 43800
 
     // Income stats starts
+    let latestBlock = await clientRPC.callRpc('getbestblockhash').call(true)
+    const BLOCK_COUNT = 10
+    let totalRewards = 0
+    for (let i = 0; i < BLOCK_COUNT; i++) {
+      const block = await clientRPC
+        .callRpc('getblock', [latestBlock, 2])
+        .call(true)
+      if (!block) break
+
+      const coinbaseTx = block.tx[0]
+      const blockReward = coinbaseTx.vout.reduce(
+        (sum, vout) => sum + vout.value,
+        0
+      )
+
+      totalRewards += blockReward
+
+      latestBlock = block.previousblockhash
+    }
+
+    const averageBlockRewards = totalRewards / BLOCK_COUNT
+
     const deflation = 0.95
-    const firstReward = 25.9875
+    const firstReward = averageBlockRewards // Old Value: 25.9875
     const oneYearIncreaseSen = 1.35
     const twoYearIncreaseSen = 2
     const oneDay = 365
@@ -1248,7 +1265,8 @@ const stats = async (req, res, next) => {
     const avgRewardYearly = annualTotalRewards / mnInfo.enabled
 
     // ROI Calcs
-    const roi = (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) / reqCoin
+    const roi =
+      (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) / reqCoin
     const roiDays = (reqCoin / avgRewardYearly) * 365
     console.log({
       deflation,
@@ -1267,7 +1285,7 @@ const stats = async (req, res, next) => {
       rewardsPerYear,
       conversionRate,
       type,
-      multiplier = 1.0,
+      multiplier = 1.0
     ) => {
       const fix = type === 'btc' ? 8 : 2
       const prefix = type === 'usd' ? '$' : ''
@@ -1290,19 +1308,19 @@ const stats = async (req, res, next) => {
       avgRewardYearly,
       sysUsd,
       'usd',
-      oneYearIncreaseSen,
+      oneYearIncreaseSen
     )
     const btcStats1Year = computeStats(
       avgRewardYearly,
       sysBtc,
       'btc',
-      oneYearIncreaseSen,
+      oneYearIncreaseSen
     )
     const sysStats1Year = computeStats(
       avgRewardYearly,
       1.0,
       'sys',
-      oneYearIncreaseSen,
+      oneYearIncreaseSen
     )
 
     // With One Seniority
@@ -1310,19 +1328,19 @@ const stats = async (req, res, next) => {
       avgRewardYearly,
       sysUsd,
       'usd',
-      twoYearIncreaseSen,
+      twoYearIncreaseSen
     )
     const btcStats2Year = computeStats(
       avgRewardYearly,
       sysBtc,
       'btc',
-      twoYearIncreaseSen,
+      twoYearIncreaseSen
     )
     const sysStats2Year = computeStats(
       avgRewardYearly,
       1.0,
       'sys',
-      twoYearIncreaseSen,
+      twoYearIncreaseSen
     )
 
     return res.status(200).json({
@@ -1332,7 +1350,7 @@ const stats = async (req, res, next) => {
           enabled: numeral(mnInfo.enabled).format('0,0'),
           new_start_required: numeral(mnInfo.newStartRequired).format('0,0'),
           sentinel_ping_expired: numeral(mnInfo.sentinelPingExpired).format(
-            '0,0',
+            '0,0'
           ),
           total_locked: numeral(coinsLocked).format('0,0.00'),
           coins_percent_locked: `${Number(coinsLockedPercent * 100).toFixed(2)}%`,
@@ -1340,8 +1358,7 @@ const stats = async (req, res, next) => {
           collateral_req: numeral(reqCoin).format('0,0'),
           masternode_price_usd: numeral(mnUsd).format('0,0.00'),
           masternode_price_btc: numeral(mnBtc).format('0,0.00000000'),
-          roi:
-            `${Number(roi * 100).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
+          roi: `${Number(roi * 100).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
           payout_frequency: ms(avgPayoutFrequency * days),
           first_pay: ms(firstPay * days),
           reward_eligble: ms(rewardElig * days),
