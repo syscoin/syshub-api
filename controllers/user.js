@@ -342,13 +342,6 @@ const updateActionsUser = async (req, res, next) => {
     const { method } = req.query
     const { data } = req.body
 
-    if (!data.pwd) {
-      return res.status(400).json({
-        ok: false,
-        message: 'required fields',
-      })
-    }
-
     if (req.user !== id) {
       return res.status(403).json({
         ok: false,
@@ -405,7 +398,6 @@ const updateActionsUser = async (req, res, next) => {
       gAuth: data.gAuth === undefined ? userData.gAuth : data.gAuth,
       sms: data.sms === undefined ? userData.sms : data.sms,
       twoFa: data.twoFa === undefined ? userData.twoFa : data.twoFa,
-      gAuthSecret: userData.gAuthSecret || undefined,
     }
 
     if (method === 'gauth-disabled' && data.code) {
