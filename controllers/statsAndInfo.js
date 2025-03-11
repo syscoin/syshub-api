@@ -1229,31 +1229,8 @@ const stats = async (req, res, next) => {
     // SB Stats
     const sbTotal = 43800
 
-    // Income stats starts
-    let latestBlock = await clientRPC.callRpc('getbestblockhash').call(true)
-    const BLOCK_COUNT = 10
-    let totalRewards = 0
-    for (let i = 0; i < BLOCK_COUNT; i++) {
-      const block = await clientRPC
-        .callRpc('getblock', [latestBlock, 2])
-        .call(true)
-      if (!block) break
-
-      const coinbaseTx = block.tx[0]
-      const blockReward = coinbaseTx.vout.reduce(
-        (sum, vout) => sum + vout.value,
-        0
-      )
-
-      totalRewards += blockReward
-
-      latestBlock = block.previousblockhash
-    }
-
-    const averageBlockRewards = totalRewards / BLOCK_COUNT
-
     const deflation = 0.95
-    const firstReward = averageBlockRewards // Old Value: 25.9875
+    const firstReward = 22.2810778659 // Old Value: 25.9875
     const oneYearIncreaseSen = 1.35
     const twoYearIncreaseSen = 2
     const oneDay = 365
