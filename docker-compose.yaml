@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  core:
+    image: syscoin-core
+    container_name: syscoin-core
+    environment:
+      - SYSCOIN_DATA=/opt/blockchain/data
+    volumes:
+      - /data/syscoin-core:/opt/blockchain/data
+    command:
+      [
+        'syscoind',
+        '--rpcauth=syscoin:55811f8b944fd851a3631f3b20ef09c2$20de2456b9853219e3ca52b22e4475a17eea94b03dacc2bf6d113fba0b50fc19',
+        '-printtoconsole',
+        '-assetindex=1',
+        '-rpcallowip=0.0.0.0/0',
+        '-rpcbind=0.0.0.0',
+        '-server',
+      ]
+    ports:
+      - 8368:8368
+      - 8369:8369
+      - 8370:8370
+    restart: always
