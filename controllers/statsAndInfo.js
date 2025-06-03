@@ -1216,7 +1216,7 @@ const stats = async (req, res, next) => {
       })
 
     const rewardElig = (mnInfo.enabled * 4) / 60
-    const avgPayoutFrequency = mnInfo.enabled / 60
+    const avgPayoutFrequency = mnInfo.enabled / 24
     const firstPay = rewardElig + avgPayoutFrequency
     const reqCoin = 100000
     const mnUsd = reqCoin * sysUsd
@@ -1229,33 +1229,26 @@ const stats = async (req, res, next) => {
     // SB Stats
     const sbTotal = 43800
 
-    const deflation = 0.95
-    const firstReward = 22.2810778659 // Old Value: 25.9875
     const oneYearIncreaseSen = 1.35
     const twoYearIncreaseSen = 2
     const oneDay = 365
     const oneWeek = 52
     const oneMonth = 12
-    const rewardPerBlock = deflation * firstReward
-    const annualTotalRewards = rewardPerBlock * 60 * 24 * 365
+    const rewardPerBlock = 52.91745294
+    const annualTotalRewards = rewardPerBlock * 24 * 24 * 365
 
     const avgRewardYearly = annualTotalRewards / mnInfo.enabled
 
     // ROI Calcs
-    const roi =
-      (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) / reqCoin
+    const roi = (avgRewardYearly / reqCoin) * 100
     const roiDays = (reqCoin / avgRewardYearly) * 365
+
     console.log({
-      deflation,
-      firstReward,
-      annualTotalRewards,
-      mnInfoEnabled: mnInfo.enabled,
-      avgRewardYearly,
-      reqCoin,
       roi,
       roiDays,
-      sysUsd,
-      sysBtc,
+      reqCoin,
+      avgRewardYearly,
+      enabled: mnInfo.enabled,
     })
 
     const computeStats = (
@@ -1335,7 +1328,7 @@ const stats = async (req, res, next) => {
           collateral_req: numeral(reqCoin).format('0,0'),
           masternode_price_usd: numeral(mnUsd).format('0,0.00'),
           masternode_price_btc: numeral(mnBtc).format('0,0.00000000'),
-          roi: `${Number(roi * 100).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
+          roi: `${Number(roi).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
           payout_frequency: ms(avgPayoutFrequency * days),
           first_pay: ms(firstPay * days),
           reward_eligble: ms(rewardElig * days),

@@ -103,14 +103,14 @@ const getAllVotingAddressByUser = async (req, res, next) => {
             if (!addrValue[key].timestampValue) {
               data[key] = decryptAes(
                 addrValue[key].stringValue,
-                process.env.KEY_FOR_ENCRYPTION,
+                process.env.KEY_FOR_ENCRYPTION
               )
             } else {
               data[key] = Number(addrValue[key].timestampValue.nanos)
             }
           })
           addresses.push(data)
-        }),
+        })
       ).catch((err) => {
         throw err
       })
@@ -127,7 +127,9 @@ const getAllVotingAddressByUser = async (req, res, next) => {
           }, {})
 
         Object.keys(votesFiltered).forEach((key) => {
-          rdata[key] = votesFiltered[key].find((el) => Math.max(Number(el.timestamp)))
+          rdata[key] = votesFiltered[key].find((el) =>
+            Math.max(Number(el.timestamp))
+          )
         })
 
         addresses.forEach((e) => {
@@ -204,12 +206,12 @@ const getVotingAddress = async (req, res, next) => {
     }
 
     if (
-      typeof addressesList !== 'undefined'
-      && addressesList.arrayValue.values.length > 0
+      typeof addressesList !== 'undefined' &&
+      addressesList.arrayValue.values.length > 0
     ) {
       if (
         typeof addressesList.arrayValue.values.find(
-          (e) => e.stringValue === id,
+          (e) => e.stringValue === id
         ) === 'undefined'
       ) {
         return res.status(403).json({
@@ -219,7 +221,7 @@ const getVotingAddress = async (req, res, next) => {
       }
 
       existMasterNodeInUser = addressesList.arrayValue.values.find(
-        (element) => element.stringValue === id,
+        (element) => element.stringValue === id
       )
 
       if (typeof existMasterNodeInUser !== 'undefined') {
@@ -236,7 +238,7 @@ const getVotingAddress = async (req, res, next) => {
           if (key !== 'date') {
             decryptData[key] = decryptAes(
               fieldsProto[key].stringValue,
-              process.env.KEY_FOR_ENCRYPTION,
+              process.env.KEY_FOR_ENCRYPTION
             )
           } else if (key === 'date') {
             decryptData[key] = Number(fieldsProto[key].timestampValue.seconds)
@@ -286,9 +288,7 @@ const createVotingAddress = async (req, res, next) => {
       return res.status(406).json({ ok: false, message: 'Required fields' })
     }
 
-    const {
-      name, address, privateKey, txId, listMN,
-    } = req.body
+    const { name, address, privateKey, txId, listMN } = req.body
 
     const re = /['"]+/g
     let serializedArray = []
@@ -324,7 +324,7 @@ const createVotingAddress = async (req, res, next) => {
     // eslint-disable-next-line max-len
     const votingAddressCurrentMns = Object.keys(currentMN).reduce(
       (acc, el) => acc.concat(currentMN[el].votingaddress),
-      [],
+      []
     )
 
     if (addressesList) {
@@ -362,10 +362,10 @@ const createVotingAddress = async (req, res, next) => {
           name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
           address: decryptAes(
             addrUser.stringValue,
-            process.env.KEY_FOR_ENCRYPTION,
+            process.env.KEY_FOR_ENCRYPTION
           ),
         }
-      }),
+      })
     )
 
     if (!listMN) {
@@ -376,12 +376,13 @@ const createVotingAddress = async (req, res, next) => {
         txId: `${txId.replace(re, '')}`.trim(),
       }
       const existInMn = votingAddressCurrentMns.find(
-        (addr) => addr === newAddress.address,
+        (addr) => addr === newAddress.address
       )
       const isExist = resp.find((e) => e.address === newAddress.address)
       const verifyName = resp.find((e) => e.name === newAddress.name)
       if (typeof verifyName !== 'undefined') {
-        newAddress.name = `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+        newAddress.name =
+          `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
       }
 
       if (typeof isExist === 'undefined' && typeof existInMn !== 'undefined') {
@@ -409,29 +410,31 @@ const createVotingAddress = async (req, res, next) => {
           txId: `${collateralHash}-${collateralIndex}`.trim(),
         }
         const existInMn = votingAddressCurrentMns.find(
-          (addr) => addr === newVotingAddress.address,
+          (addr) => addr === newVotingAddress.address
         )
         const isExist = resp.find(
-          (el) => el.address === newVotingAddress.address,
+          (el) => el.address === newVotingAddress.address
         )
         const verifyName = resp.find((el) => el.name === newVotingAddress.name)
 
         if (typeof verifyName !== 'undefined') {
-          newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+          newVotingAddress.name =
+            `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
         }
 
         if (aggregateAddresses.length > 0) {
           const verifyNameInAddresses = aggregateAddresses.find(
-            (el) => el.name === newVotingAddress.name,
+            (el) => el.name === newVotingAddress.name
           )
           if (typeof verifyNameInAddresses !== 'undefined') {
-            newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+            newVotingAddress.name =
+              `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
           }
         }
 
         if (
-          typeof isExist === 'undefined'
-          && typeof existInMn !== 'undefined'
+          typeof isExist === 'undefined' &&
+          typeof existInMn !== 'undefined'
         ) {
           aggregateAddresses.push(newVotingAddress)
         }
@@ -466,7 +469,7 @@ const createVotingAddress = async (req, res, next) => {
         } else {
           addressesInvalid.push(data)
         }
-      }),
+      })
     ).catch((err) => {
       throw err
     })
@@ -483,12 +486,10 @@ const createVotingAddress = async (req, res, next) => {
       .json({ ok: true, message: 'Data saved successfully', addressesInvalid })
   } catch (err) {
     if (err.message === 'Unexpected end of JSON input') {
-      return res
-        .status(406)
-        .json({
-          ok: false,
-          message: 'Invalid format, Please verify the data and try again',
-        })
+      return res.status(406).json({
+        ok: false,
+        message: 'Invalid format, Please verify the data and try again',
+      })
     }
     next(err)
   }
@@ -535,7 +536,7 @@ const updateVotingAddress = async (req, res, next) => {
 
     if (
       typeof fieldsProto.addressesList.arrayValue.values.find(
-        (e) => e.stringValue === id,
+        (e) => e.stringValue === id
       ) === 'undefined'
     ) {
       return res.status(403).json({
@@ -560,28 +561,32 @@ const updateVotingAddress = async (req, res, next) => {
           name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
           address: decryptAes(
             addrUser.stringValue,
-            process.env.KEY_FOR_ENCRYPTION,
+            process.env.KEY_FOR_ENCRYPTION
           ),
         }
-      }),
+      })
     )
 
     // eslint-disable-next-line max-len
     if (
-      typeof addresses.find((addrItem) => addrItem.name === data.name)
-        !== 'undefined'
-      && addresses.filter(
-        (addrItem) => addrItem.name === data.name && addrItem.address !== data.address,
+      typeof addresses.find((addrItem) => addrItem.name === data.name) !==
+        'undefined' &&
+      addresses.filter(
+        (addrItem) =>
+          addrItem.name === data.name && addrItem.address !== data.address
       ).length > 0
     ) {
       if (!data.name.split('-')[1]) {
-        data.name = `${data.name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
+        data.name =
+          `${data.name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
       }
     }
 
     // if (user.id !== req.user) return res.status(406).json({ ok: false, message: 'you do not have permissions to perform this action' });
-    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' })
-    if (!checkDataMN(data)) return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' })
+    if (!data)
+      return res.status(406).json({ ok: false, message: 'Required fields' })
+    if (!checkDataMN(data))
+      return res.status(406).json({ ok: false, messasge: 'invalid MasterNode' })
     const validateAddr = await validateAddress(data.address)
     if (!validateAddr) {
       return res.status(400).json({
@@ -650,7 +655,7 @@ const destroyVotingAddress = async (req, res, next) => {
     }
     if (fieldsProto.addressesList.arrayValue.values.length > 0) {
       existMasterNodeInUser = fieldsProto.addressesList.arrayValue.values.find(
-        (element) => element.stringValue === id,
+        (element) => element.stringValue === id
       )
       if (typeof existMasterNodeInUser !== 'undefined') {
         // eslint-disable-next-line array-callback-return
@@ -658,7 +663,7 @@ const destroyVotingAddress = async (req, res, next) => {
           addresses.push(node.stringValue)
         })
         const index = addresses.findIndex(
-          (element) => element === existMasterNodeInUser.stringValue,
+          (element) => element === existMasterNodeInUser.stringValue
         )
         addresses.splice(index, 1)
         await admin
