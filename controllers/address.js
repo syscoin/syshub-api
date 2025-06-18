@@ -288,7 +288,7 @@ const createVotingAddress = async (req, res, next) => {
       return res.status(406).json({ ok: false, message: 'Required fields' })
     }
 
-    const { name, address, privateKey, txId, listMN } = req.body
+    const { name, address, privateKey, txId, listMN, type } = req.body
 
     const re = /['"]+/g
     let serializedArray = []
@@ -374,6 +374,7 @@ const createVotingAddress = async (req, res, next) => {
         address: `${address.replace(re, '')}`.trim(),
         privateKey: `${privateKey.replace(re, '')}`.trim(),
         txId: `${txId.replace(re, '')}`.trim(),
+        type,
       }
       const existInMn = votingAddressCurrentMns.find(
         (addr) => addr === newAddress.address
