@@ -470,20 +470,20 @@ const vote = async (req, res, next) => {
           resolve(data)
         })
         .catch((err) => {
-          reject(new Error(err))
+          reject(err)
         })
     })
     return res.status(200).json(voteRaw)
   } catch (err) {
     if (
-      err.message.split(':')[1].trim() === 'Failure to find masternode in list'
+      err.message.trim() === 'Failure to find masternode in list'
     ) {
       return res
         .status(400)
         .json({ ok: false, message: 'Failure to find masterNode in list' })
     }
     if (
-      err.message.split(':')[2].trim()
+      err.message.trim()
       === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR'
     ) {
       return res.status(400).json({
@@ -493,27 +493,26 @@ const vote = async (req, res, next) => {
           'To vote on this proposal you must wait an hour then you can vote again, if you want to vote on another proposal where you have not voted, you can.',
       })
     }
-    if (err.message.split(':')[1].trim() === 'Error voting') {
+    if (err.message.trim() === 'Error voting') {
       return res
         .status(400)
         .json({ ok: false, message: 'Invalid proposal hash. Please check' })
     }
     if (
-      err.message.split(':')[1].trim()
+      err.message.trim()
       === 'mn tx hash must be hexadecimal string'
     ) {
       return res
         .status(400)
         .json({ ok: false, message: 'Invalid txId. Please check' })
     }
-    if (err.message.split(':')[1].trim() === 'Failure to verify vote.') {
+    if (err.message.trim() === 'Failure to verify vote.') {
       return res
         .status(400)
         .json({ ok: false, message: 'The vote cannot be verified' })
     }
     if (
-      err.message.split(':')[1].trim().split('64')[0].trim()
-      === 'mn tx hash must be of length'
+      /mn tx hash must be of length/.test(err.message)
     ) {
       return res
         .status(400)
