@@ -381,6 +381,7 @@ const createVotingAddress = async (req, res, next) => {
       )
       const isExist = resp.find((e) => e.address === newAddress.address)
       const verifyName = resp.find((e) => e.name === newAddress.name)
+      console.debug({ newAddress, isExist, existInMn, verifyName })
       if (typeof verifyName !== 'undefined') {
         newAddress.name =
           `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
