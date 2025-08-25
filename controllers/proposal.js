@@ -1030,6 +1030,35 @@ const updateProposal = async (req, res, next) => {
       newData[key] = data[key]
     }
 
+    // If hash is present and complete is true, call gobject_get with retry logic
+    if (data.hash && data.complete === true) {
+      const { hash } = data
+      const maxRetryCount = typeof data.maxRetryCount === 'number' ? data.maxRetryCount : 10
+      let attempt = 0
+      let rpcSuccess = false
+      let rpcResult
+      while (attempt < maxRetryCount && !rpcSuccess) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          rpcResult = await clientRPC.callRpc('gobject_get', [hash]).call()
+          console.log({ gObjectResult: rpcResult })
+          rpcSuccess = true
+        } catch (rpcErr) {
+          attempt += 1
+          if (attempt >= maxRetryCount) {
+            return res.status(500).json({
+              ok: false,
+              message: `Failed to verify proposal hash after ${maxRetryCount} attempts: ${rpcErr.message}`,
+            })
+          }
+          // Wait 10 seconds before retrying
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 10000))
+        }
+      }
+      // Optionally, you can do something with rpcResult if needed
+    }
+
     await admin
       .firestore()
       .doc(`${process.env.COLLECTION_NAME_PROPOSAL}/${id}`)
