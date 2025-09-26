@@ -368,6 +368,10 @@ const createVotingAddress = async (req, res, next) => {
       }),
     )
 
+    console.warn('[createVotingAddress] fetched addresses payload', resp)
+
+    const existingAddresses = resp.filter(Boolean)
+
     if (!listMN) {
       const newAddress = {
         name: `${name.replace(re, '')}`.trim(),
@@ -378,8 +382,12 @@ const createVotingAddress = async (req, res, next) => {
       const existInMn = votingAddressCurrentMns.find(
         (addr) => addr === newAddress.address,
       )
-      const isExist = resp.find((e) => e.address === newAddress.address)
-      const verifyName = resp.find((e) => e.name === newAddress.name)
+      const isExist = existingAddresses.find(
+        (entry) => entry && entry.address === newAddress.address,
+      )
+      const verifyName = existingAddresses.find(
+        (entry) => entry && entry.name === newAddress.name,
+      )
       if (typeof verifyName !== 'undefined') {
         newAddress.name = `${name.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
       }
@@ -411,10 +419,12 @@ const createVotingAddress = async (req, res, next) => {
         const existInMn = votingAddressCurrentMns.find(
           (addr) => addr === newVotingAddress.address,
         )
-        const isExist = resp.find(
-          (el) => el.address === newVotingAddress.address,
+        const isExist = existingAddresses.find(
+          (entry) => entry && entry.address === newVotingAddress.address,
         )
-        const verifyName = resp.find((el) => el.name === newVotingAddress.name)
+        const verifyName = existingAddresses.find(
+          (entry) => entry && entry.name === newVotingAddress.name,
+        )
 
         if (typeof verifyName !== 'undefined') {
           newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
@@ -422,7 +432,7 @@ const createVotingAddress = async (req, res, next) => {
 
         if (aggregateAddresses.length > 0) {
           const verifyNameInAddresses = aggregateAddresses.find(
-            (el) => el.name === newVotingAddress.name,
+            (entry) => entry && entry.name === newVotingAddress.name,
           )
           if (typeof verifyNameInAddresses !== 'undefined') {
             newVotingAddress.name = `${label.replace(re, '')}-${crypto.randomBytes(12).toString('hex')}`.trim()
