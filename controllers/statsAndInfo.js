@@ -60,7 +60,9 @@ const { clientRPC, admin } = require('../utils/config')
 // eslint-disable-next-line consistent-return
 const masterNodes = async (req, res, next) => {
   try {
-    const { page, sortBy, sortDesc, perPage } = req.query
+    const {
+      page, sortBy, sortDesc, perPage,
+    } = req.query
     let { search } = req.query
     if (typeof search !== 'undefined') {
       search.replace(/ /g, '')
@@ -102,8 +104,8 @@ const masterNodes = async (req, res, next) => {
     for (const masternode of masternodesArr) {
       // search filter
       if (
-        masternode.address.split(':')[0].includes(newSearch) ||
-        masternode.payee.toUpperCase().includes(newSearch.toUpperCase())
+        masternode.address.split(':')[0].includes(newSearch)
+        || masternode.payee.toUpperCase().includes(newSearch.toUpperCase())
       ) {
         const pushObj = { ...masternode }
         if (pushObj.lastpaidtime === 0) {
@@ -296,6 +298,7 @@ const list = async (req, res, next) => {
         const { fCachedEndorsed } = key
 
         const govList = {
+          Key: gObjectListKey,
           Hash,
           ColHash,
           ObjectType,
@@ -313,9 +316,7 @@ const list = async (req, res, next) => {
         }
 
         proposals.push({ ...govList, ...bb })
-        proposals.sort((a, b) =>
-          a.AbsoluteYesCount < b.AbsoluteYesCount ? 1 : -1
-        )
+        proposals.sort((a, b) => (a.AbsoluteYesCount < b.AbsoluteYesCount ? 1 : -1))
       }
     }
     // eslint-disable-next-line array-callback-return
@@ -540,14 +541,16 @@ const getSuperBlockBudget = async (req, res, next) => {
       .callRpc('getsuperblockbudget', [lastsuperblock])
       .call(true)
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
 
     const getSuperBlockBudgetNext = await clientRPC
       .callRpc('getsuperblockbudget', [nextsuperblock])
       .call(true)
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
 
     const lbs = { block: lastsuperblock, budget: getSuperBlockBudgetLast }
@@ -1017,7 +1020,7 @@ const stats = async (req, res, next) => {
 
     highestMN = Object.values(mapData).reduce(
       (a, b) => (a < b.masternodes ? b.masternodes : a),
-      highestMN
+      highestMN,
     )
 
     Object.keys(mapData).forEach((key) => {
@@ -1043,7 +1046,7 @@ const stats = async (req, res, next) => {
       },
     } = await axios
       .get(
-        'https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true'
+        'https://api.coingecko.com/api/v3/coins/syscoin?tickers=true&market_data=true',
       )
       .catch((err) => {
         throw err
@@ -1069,6 +1072,7 @@ const stats = async (req, res, next) => {
       .catch((err) => {
         throw err
       })
+
     const date = moment(genesisSeconds * 1000).format('MMMM Do YYYY, h:mm:ss a')
 
     // Get Current Block
@@ -1127,7 +1131,8 @@ const stats = async (req, res, next) => {
       .callRpc('getsuperblockbudget', [nextSuperBlock])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
 
     // Get Date of Next SuperBlock
@@ -1136,7 +1141,7 @@ const stats = async (req, res, next) => {
     const currentDate = Date.now()
     const superBlockDate = currentDate + workOutTime
     const superBlockNextDate = moment(superBlockDate).format(
-      'MMMM Do YYYY, h:mm:ss a'
+      'MMMM Do YYYY, h:mm:ss a',
     )
 
     // Get Date of Voting Deadline
@@ -1146,7 +1151,7 @@ const stats = async (req, res, next) => {
     const votingTime = voteDeadTime * avgBlockTime
     const voteDate = currentDate + votingTime
     const votingDeadlineDate = moment(voteDate).format(
-      'MMMM Do YYYY, h:mm:ss a'
+      'MMMM Do YYYY, h:mm:ss a',
     )
 
     // Get Next 5 Superblocks
@@ -1188,35 +1193,40 @@ const stats = async (req, res, next) => {
       .callRpc('getsuperblockbudget', [sb1])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
     const sb2Budget = await clientRPC
       .callRpc('getsuperblockbudget', [sb2])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
     const sb3Budget = await clientRPC
       .callRpc('getsuperblockbudget', [sb3])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
     const sb4Budget = await clientRPC
       .callRpc('getsuperblockbudget', [sb4])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
     const sb5Budget = await clientRPC
       .callRpc('getsuperblockbudget', [sb5])
       .call()
       .catch((err) => {
-        throw err
+        console.error(err)
+        return 0
       })
 
     const rewardElig = (mnInfo.enabled * 4) / 60
-    const avgPayoutFrequency = mnInfo.enabled / 60
+    const avgPayoutFrequency = mnInfo.enabled / 24
     const firstPay = rewardElig + avgPayoutFrequency
     const reqCoin = 100000
     const mnUsd = reqCoin * sysUsd
@@ -1229,40 +1239,33 @@ const stats = async (req, res, next) => {
     // SB Stats
     const sbTotal = 43800
 
-    const deflation = 0.95
-    const firstReward = 22.2810778659 // Old Value: 25.9875
     const oneYearIncreaseSen = 1.35
     const twoYearIncreaseSen = 2
     const oneDay = 365
     const oneWeek = 52
     const oneMonth = 12
-    const rewardPerBlock = deflation * firstReward
-    const annualTotalRewards = rewardPerBlock * 60 * 24 * 365
+    const rewardPerBlock = 52.91745294
+    const annualTotalRewards = rewardPerBlock * 24 * 24 * 365
 
     const avgRewardYearly = annualTotalRewards / mnInfo.enabled
 
     // ROI Calcs
-    const roi =
-      (Number.isFinite(avgRewardYearly) ? avgRewardYearly : 0) / reqCoin
+    const roi = (avgRewardYearly / reqCoin) * 100
     const roiDays = (reqCoin / avgRewardYearly) * 365
+
     console.log({
-      deflation,
-      firstReward,
-      annualTotalRewards,
-      mnInfoEnabled: mnInfo.enabled,
-      avgRewardYearly,
-      reqCoin,
       roi,
       roiDays,
-      sysUsd,
-      sysBtc,
+      reqCoin,
+      avgRewardYearly,
+      enabled: mnInfo.enabled,
     })
 
     const computeStats = (
       rewardsPerYear,
       conversionRate,
       type,
-      multiplier = 1.0
+      multiplier = 1.0,
     ) => {
       const fix = type === 'btc' ? 8 : 2
       const prefix = type === 'usd' ? '$' : ''
@@ -1285,19 +1288,19 @@ const stats = async (req, res, next) => {
       avgRewardYearly,
       sysUsd,
       'usd',
-      oneYearIncreaseSen
+      oneYearIncreaseSen,
     )
     const btcStats1Year = computeStats(
       avgRewardYearly,
       sysBtc,
       'btc',
-      oneYearIncreaseSen
+      oneYearIncreaseSen,
     )
     const sysStats1Year = computeStats(
       avgRewardYearly,
       1.0,
       'sys',
-      oneYearIncreaseSen
+      oneYearIncreaseSen,
     )
 
     // With One Seniority
@@ -1305,19 +1308,19 @@ const stats = async (req, res, next) => {
       avgRewardYearly,
       sysUsd,
       'usd',
-      twoYearIncreaseSen
+      twoYearIncreaseSen,
     )
     const btcStats2Year = computeStats(
       avgRewardYearly,
       sysBtc,
       'btc',
-      twoYearIncreaseSen
+      twoYearIncreaseSen,
     )
     const sysStats2Year = computeStats(
       avgRewardYearly,
       1.0,
       'sys',
-      twoYearIncreaseSen
+      twoYearIncreaseSen,
     )
 
     return res.status(200).json({
@@ -1327,7 +1330,7 @@ const stats = async (req, res, next) => {
           enabled: numeral(mnInfo.enabled).format('0,0'),
           new_start_required: numeral(mnInfo.newStartRequired).format('0,0'),
           sentinel_ping_expired: numeral(mnInfo.sentinelPingExpired).format(
-            '0,0'
+            '0,0',
           ),
           total_locked: numeral(coinsLocked).format('0,0.00'),
           coins_percent_locked: `${Number(coinsLockedPercent * 100).toFixed(2)}%`,
@@ -1335,7 +1338,7 @@ const stats = async (req, res, next) => {
           collateral_req: numeral(reqCoin).format('0,0'),
           masternode_price_usd: numeral(mnUsd).format('0,0.00'),
           masternode_price_btc: numeral(mnBtc).format('0,0.00000000'),
-          roi: `${Number(roi * 100).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
+          roi: `${Number(roi).toFixed(2)}% // ${Math.ceil(roiDays)} Days`,
           payout_frequency: ms(avgPayoutFrequency * days),
           first_pay: ms(firstPay * days),
           reward_eligble: ms(rewardElig * days),
