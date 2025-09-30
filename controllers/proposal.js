@@ -45,15 +45,15 @@ const check = async (req, res, next) => {
     } = req.body
     // eslint-disable-next-line max-len
     if (
-      !type
-      || !name
-      || !title
-      || !nPayment
-      || !firstEpoch
-      || !startEpoch
-      || !endEpoch
-      || !paymentAddress
-      || !paymentAmount
+      !type ||
+      !name ||
+      !title ||
+      !nPayment ||
+      !firstEpoch ||
+      !startEpoch ||
+      !endEpoch ||
+      !paymentAddress ||
+      !paymentAmount
     ) {
       return res.status(406).json({
         ok: false,
@@ -99,8 +99,8 @@ const check = async (req, res, next) => {
     }
   } catch (err) {
     if (
-      err.message
-      === 'Invalid proposal data, error messages:data exceeds 512 characters;JSON parsing error;'
+      err.message ===
+      'Invalid proposal data, error messages:data exceeds 512 characters;JSON parsing error;'
     ) {
       return res.status(400).json({
         ok: false,
@@ -165,15 +165,15 @@ const prepare = async (req, res, next) => {
     } = req.body
     // eslint-disable-next-line max-len
     if (
-      !type
-      || !name
-      || !title
-      || !nPayment
-      || !firstEpoch
-      || !startEpoch
-      || !endEpoch
-      || !paymentAddress
-      || !paymentAmount
+      !type ||
+      !name ||
+      !title ||
+      !nPayment ||
+      !firstEpoch ||
+      !startEpoch ||
+      !endEpoch ||
+      !paymentAddress ||
+      !paymentAmount
     ) {
       return res.status(406).json({
         ok: false,
@@ -244,9 +244,7 @@ const prepare = async (req, res, next) => {
         dataHex: hexProposal,
       }
 
-      const {
-        parentHash, revision, time, dataHex,
-      } = prepareObjectProposal
+      const { parentHash, revision, time, dataHex } = prepareObjectProposal
       const command = `gobject_prepare ${parentHash} ${revision} ${time} ${dataHex}`
       const proposalResp = await admin
         .firestore()
@@ -322,9 +320,7 @@ const prepare = async (req, res, next) => {
 const submit = async (req, res, next) => {
   try {
     const { id } = req.params
-    const {
-      parentHash, revision, time, dataHex, txId,
-    } = req.body
+    const { parentHash, revision, time, dataHex, txId } = req.body
     if (!parentHash || !revision || !time || !dataHex || !txId) {
       return res.status(406).json({
         ok: false,
@@ -355,7 +351,8 @@ const submit = async (req, res, next) => {
       })
     }
 
-    const commandSubmit = `gobject_submit ${parentHash} ${revision} ${time} ${dataHex} ${txId}`.trim()
+    const commandSubmit =
+      `gobject_submit ${parentHash} ${revision} ${time} ${dataHex} ${txId}`.trim()
 
     const verifyHex = await clientRPC
       .callRpc('gobject_check', [dataHex])
@@ -413,18 +410,17 @@ const submit = async (req, res, next) => {
 // eslint-disable-next-line consistent-return
 const vote = async (req, res, next) => {
   try {
-    const {
-      txHash, txIndex, governanceHash, signal, vote, time, signature,
-    } = req.body
+    const { txHash, txIndex, governanceHash, signal, vote, time, signature } =
+      req.body
 
     if (
-      !txHash
-      || !txIndex
-      || !governanceHash
-      || !signal
-      || !vote
-      || !time
-      || !signature
+      !txHash ||
+      !txIndex ||
+      !governanceHash ||
+      !signal ||
+      !vote ||
+      !time ||
+      !signature
     ) {
       return res.status(406).json({
         ok: false,
@@ -463,7 +459,7 @@ const vote = async (req, res, next) => {
           signal,
           vote,
           time,
-          signature,
+          signature
         )
         .call(true)
         .then(({ data }) => {
@@ -475,17 +471,12 @@ const vote = async (req, res, next) => {
     })
     return res.status(200).json(voteRaw)
   } catch (err) {
-    if (
-      err.message.trim() === 'Failure to find masternode in list'
-    ) {
+    if (err.message.trim() === 'Failure to find masternode in list') {
       return res
         .status(400)
         .json({ ok: false, message: 'Failure to find masterNode in list' })
     }
-    if (
-      err.message.trim()
-      === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR'
-    ) {
+    if (err.message.trim() === 'GOVERNANCE_EXCEPTION_TEMPORARY_ERROR') {
       return res.status(400).json({
         ok: false,
         // eslint-disable-next-line max-len
@@ -498,10 +489,7 @@ const vote = async (req, res, next) => {
         .status(400)
         .json({ ok: false, message: 'Invalid proposal hash. Please check' })
     }
-    if (
-      err.message.trim()
-      === 'mn tx hash must be hexadecimal string'
-    ) {
+    if (err.message.trim() === 'mn tx hash must be hexadecimal string') {
       return res
         .status(400)
         .json({ ok: false, message: 'Invalid txId. Please check' })
@@ -511,9 +499,7 @@ const vote = async (req, res, next) => {
         .status(400)
         .json({ ok: false, message: 'The vote cannot be verified' })
     }
-    if (
-      /mn tx hash must be of length/.test(err.message)
-    ) {
+    if (/mn tx hash must be of length/.test(err.message)) {
       return res
         .status(400)
         .json({ ok: false, message: 'Invalid txId. Please check' })
@@ -552,34 +538,36 @@ const getProposalsPendingByUser = async (req, res, next) => {
           // eslint-disable-next-line no-underscore-dangle,max-len
           Promise.all(
             user._fieldsProto.proposalList.arrayValue.values.map(
-              async (proposal) => new Promise((resolve, reject) => {
-                admin
-                  .firestore()
-                  .collection(process.env.COLLECTION_NAME_PROPOSAL)
-                  .doc(proposal.stringValue)
-                  .get()
-                  .then((resp) => {
-                    resolve(resp)
-                  })
-                  .catch((err) => {
-                    reject(err)
-                  })
-              }),
-            ),
+              async (proposal) =>
+                new Promise((resolve, reject) => {
+                  admin
+                    .firestore()
+                    .collection(process.env.COLLECTION_NAME_PROPOSAL)
+                    .doc(proposal.stringValue)
+                    .get()
+                    .then((resp) => {
+                      resolve(resp)
+                    })
+                    .catch((err) => {
+                      reject(err)
+                    })
+                })
+            )
           )
             .then((elements) => {
               // eslint-disable-next-line no-underscore-dangle
               const proposalNoComplete = elements.filter(
-                (elem) => elem._fieldsProto.complete.booleanValue === false,
+                (elem) => elem._fieldsProto.complete.booleanValue === false
               )
               // eslint-disable-next-line prefer-spread,no-underscore-dangle
               const proposalReciente = Math.max.apply(
                 Math,
-                proposalNoComplete.map((o) => o._createTime.nanoseconds),
+                proposalNoComplete.map((o) => o._createTime.nanoseconds)
               )
               // eslint-disable-next-line no-underscore-dangle,max-len
               const currentNoCompleteProposal = proposalNoComplete.find(
-                (proposal) => proposal._createTime.nanoseconds === proposalReciente,
+                (proposal) =>
+                  proposal._createTime.nanoseconds === proposalReciente
               )
 
               if (typeof currentNoCompleteProposal === 'undefined') {
@@ -603,7 +591,7 @@ const getProposalsPendingByUser = async (req, res, next) => {
                   ) {
                     // eslint-disable-next-line no-underscore-dangle
                     proposalData[key] = Number(
-                      currentNoCompleteProposal._fieldsProto[key].integerValue,
+                      currentNoCompleteProposal._fieldsProto[key].integerValue
                     )
                     // eslint-disable-next-line no-underscore-dangle
                   } else if (
@@ -611,10 +599,12 @@ const getProposalsPendingByUser = async (req, res, next) => {
                       .booleanValue !== 'undefined'
                   ) {
                     // eslint-disable-next-line no-underscore-dangle
-                    proposalData[key] = currentNoCompleteProposal._fieldsProto[key].booleanValue
+                    proposalData[key] =
+                      currentNoCompleteProposal._fieldsProto[key].booleanValue
                   } else {
                     // eslint-disable-next-line no-underscore-dangle
-                    proposalData[key] = currentNoCompleteProposal._fieldsProto[key].stringValue
+                    proposalData[key] =
+                      currentNoCompleteProposal._fieldsProto[key].stringValue
                   }
                 }
               }
@@ -680,13 +670,14 @@ const getOneProposal = async (req, res, next) => {
     }
     // eslint-disable-next-line no-underscore-dangle
     if (
-      user._fieldsProto.proposalList
-      && user._fieldsProto.proposalList.arrayValue.values.length > 0
+      user._fieldsProto.proposalList &&
+      user._fieldsProto.proposalList.arrayValue.values.length > 0
     ) {
       // eslint-disable-next-line max-len,no-underscore-dangle
-      existProposalsInUser = user._fieldsProto.proposalList.arrayValue.values.find(
-        (element) => element.stringValue === id,
-      )
+      existProposalsInUser =
+        user._fieldsProto.proposalList.arrayValue.values.find(
+          (element) => element.stringValue === id
+        )
       if (typeof existProposalsInUser !== 'undefined') {
         const { _fieldsProto } = await admin
           .firestore()
@@ -862,7 +853,8 @@ const getAllHiddenProposal = async (req, res, next) => {
 const createHiddenProposal = async (req, res, next) => {
   try {
     const { hash } = req.body
-    if (!hash) return res.status(406).json({ ok: false, message: 'required fields' })
+    if (!hash)
+      return res.status(406).json({ ok: false, message: 'required fields' })
     if (hash.length !== 64) {
       return res
         .status(406)
@@ -892,12 +884,10 @@ const createHiddenProposal = async (req, res, next) => {
     const existingHash = Object.keys(gobjectData).find((e) => e === hash)
 
     if (typeof existingHash === 'undefined') {
-      return res
-        .status(406)
-        .json({
-          ok: false,
-          message: 'the proposal does not exist in the governance list',
-        })
+      return res.status(406).json({
+        ok: false,
+        message: 'the proposal does not exist in the governance list',
+      })
     }
     await admin
       .firestore()
@@ -1011,11 +1001,12 @@ const updateProposal = async (req, res, next) => {
         message: 'you do not have permissions to perform this action',
       })
     }
-    if (!data) return res.status(406).json({ ok: false, message: 'Required fields' })
+    if (!data)
+      return res.status(406).json({ ok: false, message: 'Required fields' })
 
     // eslint-disable-next-line prefer-const,max-len,no-underscore-dangle
     existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find(
-      (element) => element.stringValue === id,
+      (element) => element.stringValue === id
     )
 
     if (typeof existProposalInUser === 'undefined') {
@@ -1033,10 +1024,14 @@ const updateProposal = async (req, res, next) => {
     // If hash is present and complete is true, call gobject_get with retry logic
     if (data.hash && data.complete === true) {
       const { hash } = data
-      const maxRetryCount = typeof data.maxRetryCount === 'number' ? data.maxRetryCount : 10
+      const maxRetryCount =
+        typeof data.maxRetryCount === 'number' ? data.maxRetryCount : 30
       let attempt = 0
       let rpcSuccess = false
       let rpcResult
+      const retryDelayMs = 10_000
+      const maxDurationMs = 10 * 60 * 1000
+      const startTime = Date.now()
       while (attempt < maxRetryCount && !rpcSuccess) {
         try {
           // eslint-disable-next-line no-await-in-loop
@@ -1045,6 +1040,13 @@ const updateProposal = async (req, res, next) => {
           rpcSuccess = true
         } catch (rpcErr) {
           attempt += 1
+          const elapsed = Date.now() - startTime
+          if (elapsed >= maxDurationMs) {
+            return res.status(408).json({
+              ok: false,
+              message: 'Proposal submission failed. Please try again in 5mins.',
+            })
+          }
           if (attempt >= maxRetryCount) {
             return res.status(500).json({
               ok: false,
@@ -1053,7 +1055,7 @@ const updateProposal = async (req, res, next) => {
           }
           // Wait 10 seconds before retrying
           // eslint-disable-next-line no-await-in-loop
-          await new Promise((resolve) => setTimeout(resolve, 10000))
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs))
         }
       }
       // Optionally, you can do something with rpcResult if needed
@@ -1102,14 +1104,16 @@ const updateProposal = async (req, res, next) => {
           ].valueType === 'integerValue'
         ) {
           // eslint-disable-next-line no-underscore-dangle,max-len
-          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
-            prepareKey
-          ].integerValue
+          prepareObjectProposal[prepareKey] =
+            proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
+              prepareKey
+            ].integerValue
         } else {
           // eslint-disable-next-line no-underscore-dangle,max-len
-          prepareObjectProposal[prepareKey] = proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
-            prepareKey
-          ].stringValue
+          prepareObjectProposal[prepareKey] =
+            proposal._fieldsProto.prepareObjectProposal.mapValue.fields[
+              prepareKey
+            ].stringValue
         }
       }
     }
@@ -1162,16 +1166,17 @@ const deleteProposal = async (req, res, next) => {
     // eslint-disable-next-line no-underscore-dangle
     if (user._fieldsProto.proposalList.arrayValue.values.length > 0) {
       // eslint-disable-next-line no-underscore-dangle,max-len
-      existProposalInUser = user._fieldsProto.proposalList.arrayValue.values.find(
-        (element) => element.stringValue === id,
-      )
+      existProposalInUser =
+        user._fieldsProto.proposalList.arrayValue.values.find(
+          (element) => element.stringValue === id
+        )
       if (typeof existProposalInUser !== 'undefined') {
         // eslint-disable-next-line no-underscore-dangle,array-callback-return
         user._fieldsProto.proposalList.arrayValue.values.map((proposal) => {
           proposals.push(proposal.stringValue)
         })
         const index = proposals.findIndex(
-          (element) => element === existProposalInUser.stringValue,
+          (element) => element === existProposalInUser.stringValue
         )
         proposals.splice(index, 1)
         await admin
