@@ -1044,7 +1044,8 @@ const updateProposal = async (req, res, next) => {
           if (elapsed >= maxDurationMs) {
             return res.status(408).json({
               ok: false,
-              message: 'Proposal submission failed. Please try again in 5mins.',
+              message:
+                'Proposal submission failed. Please verify that the proposal is not displayed on the Governance page, and if not, try again in 5 minutes.',
             })
           }
           if (attempt >= maxRetryCount) {
