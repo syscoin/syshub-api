@@ -247,9 +247,6 @@ const getUser2fa = async (req, res, next) => {
           if (key === 'twoFa' || key === 'gAuth' || key === 'sms') {
             // eslint-disable-next-line no-underscore-dangle
             userData[key] = user._fieldsProto[key].booleanValue
-          } else if (key === 'gAuthSecret') {
-            // eslint-disable-next-line no-underscore-dangle
-            userData[key] = user._fieldsProto[key].stringValue
           }
         }
       }
