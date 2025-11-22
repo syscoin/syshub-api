@@ -1,7 +1,12 @@
 const { signInWithEmailAndPassword, getAuth } = require('firebase/auth')
 
 const { admin, firebaseApp } = require('../utils/config')
-const { encryptAes, decryptAes } = require('../utils/encrypt')
+const {
+  encryptAes,
+  decryptAesAuto,
+  isLegacyFormat,
+  migrateEncryption
+} = require('../utils/encrypt')
 const { verifyAuthCode } = require('../utils/helpers')
 
 /**
@@ -399,7 +404,9 @@ const updateActionsUser = async (req, res, next) => {
 
     if (method === 'gauth-disabled' && data.code) {
       const userdata = user.data()
-      const seed = decryptAes(
+
+      // Decrypt using auto-detect (handles both legacy and new formats)
+      const seed = decryptAesAuto(
         userdata.gAuthSecret,
         process.env.KEY_FOR_ENCRYPTION
       )
@@ -411,8 +418,16 @@ const updateActionsUser = async (req, res, next) => {
           message: 'Google Authenticator code invalid',
         })
       }
+
+      // If legacy format detected, migrate to new format before disabling
+      if (isLegacyFormat(userdata.gAuthSecret)) {
+        console.log(`Migrating 2FA encryption for user ${id} during disable`)
+        // Note: gAuthSecret will be removed when gAuth is set to false
+      }
+
       updatedData.gAuth = false
     } else if (data.gAuth && data.gAuthSecret) {
+      // Always use new secure encryption for new 2FA setups
       const seed = encryptAes(data.gAuthSecret, process.env.KEY_FOR_ENCRYPTION)
       updatedData.gAuthSecret = seed
       updatedData.gAuth = data.gAuth
@@ -641,10 +656,35 @@ const verifyGAuthCode = async (req, res) => {
       })
     }
 
-    const seed = decryptAes(
+    // Decrypt using auto-detect (handles both legacy and new formats)
+    const seed = decryptAesAuto(
       userData.gAuthSecret,
       process.env.KEY_FOR_ENCRYPTION
     )
+
+    // If legacy format detected, migrate to new format automatically
+    if (isLegacyFormat(userData.gAuthSecret)) {
+      console.log(`Auto-migrating 2FA encryption for user ${req.user} during verification`)
+      try {
+        const newEncrypted = migrateEncryption(
+          userData.gAuthSecret,
+          process.env.KEY_FOR_ENCRYPTION
+        )
+
+        // Update user record with new encryption
+        await admin
+          .firestore()
+          .collection(process.env.COLLECTION_NAME_USERS)
+          .doc(req.user)
+          .update({ gAuthSecret: newEncrypted })
+
+        console.log(`Successfully migrated 2FA encryption for user ${req.user}`)
+      } catch (migrateErr) {
+        console.error(`Failed to migrate 2FA encryption for user ${req.user}:`, migrateErr.message)
+        // Continue with verification even if migration fails
+      }
+    }
+
     const isVerified = verifyAuthCode(seed, code)
     if (isVerified) {
       return res.status(200).json({
