@@ -5,6 +5,19 @@
 **Auditor:** Software Auditor (AI Agent)
 **Codebase:** osiastedian/syshub-api
 **Branch:** claude/software-audit-report-01EAd4AeUycbJL5XnwSfCyFi
+**Production URL:** https://syshub-staging.syscoin.org
+**Infrastructure:** Cloudflare Proxy (Rate Limiting & CORS handled at edge)
+
+---
+
+## 🚨 Production Status
+
+**This application is LIVE in production.** All critical and high severity issues should be addressed immediately to protect user data and system integrity.
+
+**Infrastructure Security:**
+- ✅ **Cloudflare Proxy:** Rate limiting and CORS policies are enforced at the edge
+- ✅ **HTTPS:** Served over TLS via Cloudflare
+- ⚠️ **Application-level protections:** Still require implementation (see below)
 
 ---
 
@@ -12,106 +25,84 @@
 
 This audit identifies **22 security vulnerabilities and code quality issues** across the SysHub API codebase. The application is a Node.js/Express REST API for managing Syscoin blockchain governance proposals, masternodes, and user authentication.
 
-**Risk Level Distribution:**
-- 🔴 **CRITICAL:** 3 issues
-- 🟠 **HIGH:** 6 issues
-- 🟡 **MEDIUM:** 9 issues
-- 🟢 **LOW:** 4 issues
+**Risk Level Distribution (Adjusted for Infrastructure):**
+- 🔴 **CRITICAL:** 1 issue (Weak 2FA Encryption)
+- 🟠 **HIGH:** 6 issues (Authentication, Input Validation, Error Handling)
+- 🟡 **MEDIUM:** 9 issues (Logging, Promise Handling, Database Cleanup)
+- 🟢 **LOW:** 4 issues (API Versioning, Code Quality)
+- ℹ️  **INFRASTRUCTURE-HANDLED:** 2 issues (Rate Limiting, CORS - managed by Cloudflare)
 
-**Immediate Action Required:** The CRITICAL issues (rate limiting, CORS, encryption) must be addressed before production deployment.
+**Immediate Action Required:** The CRITICAL encryption issue and HIGH severity authentication vulnerabilities must be addressed immediately as they affect production users.
 
 ---
 
 ## Table of Contents
 
-1. [Critical Severity Issues](#critical-severity-issues)
-2. [High Severity Issues](#high-severity-issues)
-3. [Medium Severity Issues](#medium-severity-issues)
-4. [Low Severity Issues](#low-severity-issues)
-5. [Dependency Vulnerabilities](#dependency-vulnerabilities)
-6. [Positive Security Practices](#positive-security-practices)
-7. [Recommendations Summary](#recommendations-summary)
+1. [Infrastructure-Handled Issues](#infrastructure-handled-issues)
+2. [Critical Severity Issues](#critical-severity-issues)
+3. [High Severity Issues](#high-severity-issues)
+4. [Medium Severity Issues](#medium-severity-issues)
+5. [Low Severity Issues](#low-severity-issues)
+6. [Dependency Vulnerabilities](#dependency-vulnerabilities)
+7. [Cloudflare Configuration Recommendations](#cloudflare-configuration-recommendations)
+8. [Positive Security Practices](#positive-security-practices)
+9. [Recommendations Summary](#recommendations-summary)
 
 ---
 
-## Critical Severity Issues
+## Infrastructure-Handled Issues
 
-### 🔴 CRIT-001: No Rate Limiting - DoS Vulnerability
+### ℹ️ INFO-001: Rate Limiting (Handled by Cloudflare)
 
 **Location:** `app.js:1-59`
-**Severity:** CRITICAL
-**CVSS Score:** 7.5 (High)
+**Severity:** INFO (Mitigated at infrastructure level)
+**Status:** ✅ **PROTECTED** by Cloudflare
 
-**Issue:**
-The API has no rate limiting implemented, making it vulnerable to:
-- Denial of Service (DoS) attacks
-- Brute force attacks on authentication endpoints
-- Resource exhaustion
-- Cost exploitation (Firebase/RPC calls)
+**Finding:**
+Application code has no rate limiting middleware, but this is handled by Cloudflare proxy.
 
-**Evidence:**
+**Cloudflare Protection Provides:**
+- Edge-level rate limiting before traffic reaches origin
+- DDoS protection
+- Bot management
+- Challenge pages for suspicious traffic
+
+**Recommendation:**
+
+Verify Cloudflare settings are properly configured:
+
+1. **Check Rate Limiting Rules:**
+   - Log into Cloudflare Dashboard
+   - Navigate to Security > WAF > Rate limiting rules
+   - Verify rules for:
+     - Global API rate: 100 req/15min per IP
+     - Auth endpoints: 5 req/15min per IP for `/user/verify-gauth-code`, `/auth/*`
+     - Proposal submission: 10 req/hour per user
+
+2. **Optional: Add application-level limiting** for defense-in-depth:
 ```javascript
-// app.js - No rate limiting middleware
-app.use(cors())
-app.use(helmet())
-app.use(compression())
-// Missing: app.use(rateLimit(...))
+// Only needed if Cloudflare is bypassed or for localhost testing
+if (process.env.NODE_ENV !== 'prod') {
+  const rateLimit = require('express-rate-limit');
+  app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+  }));
+}
 ```
 
-**Impact:**
-- Attackers can overwhelm the server with unlimited requests
-- Brute force attacks on `/user/verify-gauth-code` endpoint
-- Expensive Firebase/blockchain RPC calls can be abused
-- API costs can escalate rapidly
-
-**Solution:**
-
-Install and configure `express-rate-limit`:
-
-```bash
-npm install express-rate-limit
-```
-
-```javascript
-// app.js
-const rateLimit = require('express-rate-limit');
-
-// Global rate limiter
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: { ok: false, message: 'Too many requests, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Strict limiter for authentication endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5, // 5 attempts per 15 minutes
-  skipSuccessfulRequests: true,
-});
-
-// Apply globally
-app.use(globalLimiter);
-
-// Apply strict limiter to auth routes
-app.use('/auth', authLimiter);
-app.use('/user/verify-gauth-code', authLimiter);
-```
-
-**Priority:** IMMEDIATE - Deploy before production use
+**Action Required:** ✅ Verify Cloudflare configuration, document settings
 
 ---
 
-### 🔴 CRIT-002: CORS Allows All Origins
+### ℹ️ INFO-002: CORS Configuration (Handled by Cloudflare)
 
 **Location:** `app.js:20`
-**Severity:** CRITICAL
-**CVSS Score:** 6.5 (Medium-High)
+**Severity:** INFO (Partially mitigated at infrastructure level)
+**Status:** ⚠️ **NEEDS VERIFICATION**
 
-**Issue:**
-CORS is configured to allow ALL origins without restrictions, enabling Cross-Site Request Forgery (CSRF) attacks.
+**Finding:**
+Application allows all CORS origins, but Cloudflare can enforce origin policies.
 
 **Evidence:**
 ```javascript
@@ -119,77 +110,64 @@ CORS is configured to allow ALL origins without restrictions, enabling Cross-Sit
 app.use(cors()) // Allows ALL origins (*)
 ```
 
-**Impact:**
-- Any website can make requests to your API
-- User credentials can be stolen via malicious sites
-- Unauthorized actions can be performed on behalf of authenticated users
+**Cloudflare Protection:**
+- Access Policies can restrict origins
+- WAF rules can block unauthorized referrers
+- Worker scripts can enforce CORS
 
-**Solution:**
+**Recommendation:**
 
-Configure CORS with specific allowed origins:
+**Still implement application-level CORS** for defense-in-depth:
 
 ```javascript
-// app.js
-const cors = require('cors');
-
+// app.js - Even with Cloudflare, restrict at app level
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
+      'https://syshub-staging.syscoin.org',
+      'https://syshub.syscoin.org', // Production
       process.env.PROD_URL,
       process.env.TEST_URL,
-      'http://localhost:3000',
-      'http://localhost:4200'
-    ].filter(Boolean); // Remove undefined values
+      // Only in dev/test:
+      ...(process.env.NODE_ENV !== 'prod' ? ['http://localhost:3000', 'http://localhost:4200'] : [])
+    ].filter(Boolean);
 
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin) return callback(null, true); // Allow same-origin
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Allow cookies
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 ```
 
-**Additional Protection:**
+**Why both?**
+- Cloudflare protects against external attacks
+- Application CORS protects if Cloudflare is bypassed (direct origin access)
+- Defense-in-depth principle
 
-Add CSRF tokens for state-changing operations:
+**Action Required:** ⚠️ Implement application-level CORS + verify Cloudflare Access Policies
 
-```bash
-npm install csurf cookie-parser
-```
-
-```javascript
-const csrf = require('csurf');
-const cookieParser = require('cookie-parser');
-
-app.use(cookieParser());
-app.use(csrf({ cookie: true }));
-
-// Provide CSRF token to clients
-app.get('/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-```
-
-**Priority:** IMMEDIATE - Critical security misconfiguration
+**Priority:** MEDIUM - Implement within this week
 
 ---
 
-### 🔴 CRIT-003: Weak Encryption for 2FA Secrets
+## Critical Severity Issues
+
+### 🔴 CRIT-001: Weak Encryption for 2FA Secrets
 
 **Location:** `utils/encrypt.js:1-16`, `controllers/user.js:402-418`
-**Severity:** CRITICAL
+**Severity:** CRITICAL ⚠️ **PRODUCTION IMPACT**
 **CVSS Score:** 8.1 (High)
+**Status:** 🔴 **ACTIVE VULNERABILITY** - Affects all users with 2FA enabled
 
 **Issue:**
-2FA secrets (Google Authenticator seeds) are encrypted using CryptoJS AES without proper key derivation, salt, or authenticated encryption. The encryption key comes directly from environment variables.
+2FA secrets (Google Authenticator seeds) are encrypted using CryptoJS AES without proper key derivation, salt, or authenticated encryption. The encryption key comes directly from environment variables. **This is currently protecting user accounts in production.**
 
 **Evidence:**
 ```javascript
@@ -1988,6 +1966,272 @@ const formatted = format(new Date(), 'yyyy-MM-dd');
 
 ---
 
+## Cloudflare Configuration Recommendations
+
+Since you're using Cloudflare as a proxy, here are recommended security configurations to maximize protection:
+
+### 1. Rate Limiting Rules
+
+**Navigate to:** Security > WAF > Rate limiting rules
+
+**Recommended Rules:**
+
+```
+Rule 1: Global API Protection
+- Path: /api/* or /*
+- Rate: 100 requests per 15 minutes
+- Match: By IP address
+- Action: Challenge
+
+Rule 2: Authentication Endpoints
+- Paths: /user/verify-gauth-code, /auth/*, /user/actions/*
+- Rate: 5 requests per 15 minutes
+- Match: By IP address
+- Action: Block
+
+Rule 3: Proposal Submission
+- Paths: /proposal/prepare, /proposal/submit
+- Rate: 10 requests per hour
+- Match: By user session (if possible)
+- Action: Challenge
+
+Rule 4: Admin Endpoints
+- Path: /admin/*
+- Rate: 20 requests per 15 minutes
+- Match: By IP address
+- Action: Block
+```
+
+### 2. WAF Rules (Web Application Firewall)
+
+**Navigate to:** Security > WAF > Custom rules
+
+**Recommended Custom Rules:**
+
+```
+Rule 1: Block SQL Injection Attempts
+- Field: Request body
+- Operator: contains
+- Value: (UNION|SELECT|INSERT|DROP|DELETE|UPDATE).*FROM
+- Action: Block
+
+Rule 2: Block XSS Attempts
+- Field: All request fields
+- Operator: contains
+- Value: <script|javascript:|onerror=
+- Action: Block
+
+Rule 3: Require User-Agent
+- Field: User-Agent
+- Operator: does not equal
+- Value: (empty)
+- Action: Challenge
+
+Rule 4: Block Direct IP Access
+- Field: Host
+- Operator: equals
+- Value: [YOUR_ORIGIN_IP]
+- Action: Block
+```
+
+### 3. Access Policies
+
+**Navigate to:** Security > Access > Applications
+
+**Recommendation:** Create Cloudflare Access application for `/admin/*` routes:
+
+```
+Application Configuration:
+- Application domain: syshub-staging.syscoin.org
+- Path: /admin/*
+- Session duration: 1 hour
+
+Access Policy:
+- Allow only specific IP addresses (your office/VPN)
+- Require email verification
+- Optional: Require hardware key (YubiKey)
+```
+
+### 4. Page Rules
+
+**Navigate to:** Rules > Page Rules
+
+```
+Rule 1: Force HTTPS
+- URL: http://syshub-staging.syscoin.org/*
+- Settings: Always Use HTTPS = On
+
+Rule 2: Security Headers
+- URL: https://syshub-staging.syscoin.org/*
+- Settings:
+  - Security Level = High
+  - Browser Integrity Check = On
+  - Challenge Passage = 30 minutes
+```
+
+### 5. Firewall Settings
+
+**Navigate to:** Security > Settings
+
+**Recommended Settings:**
+
+```
+✅ Security Level: High
+✅ Challenge Passage: 30 minutes
+✅ Browser Integrity Check: On
+✅ Privacy Pass Support: On
+⚠️ Email Address Obfuscation: On (if serving HTML)
+```
+
+### 6. SSL/TLS Configuration
+
+**Navigate to:** SSL/TLS > Edge Certificates
+
+**Recommended Settings:**
+
+```
+✅ Always Use HTTPS: On
+✅ Minimum TLS Version: TLS 1.2
+✅ Opportunistic Encryption: On
+✅ TLS 1.3: On
+✅ Automatic HTTPS Rewrites: On
+✅ Certificate Transparency Monitoring: On
+```
+
+**SSL/TLS Encryption Mode:** Full (strict)
+- Ensures end-to-end encryption from Cloudflare to origin
+
+### 7. Authenticated Origin Pulls
+
+**Navigate to:** SSL/TLS > Origin Server
+
+**Recommended:**
+
+```
+✅ Enable Authenticated Origin Pulls
+```
+
+This ensures only Cloudflare can connect to your origin server:
+
+```javascript
+// nginx or load balancer configuration
+ssl_verify_client on;
+ssl_client_certificate /path/to/cloudflare-origin-pull-ca.pem;
+```
+
+### 8. IP Access Rules
+
+**Navigate to:** Security > WAF > Tools
+
+**Recommended:**
+
+```
+Whitelist IPs:
+- Your office/development IPs
+- CI/CD pipeline IPs
+
+Blocklist IPs:
+- Known malicious IPs (check threat intelligence feeds)
+- Countries you don't operate in (if applicable)
+```
+
+### 9. Bot Management
+
+**Navigate to:** Security > Bots
+
+**Recommended Settings:**
+
+```
+✅ Bot Fight Mode: On
+✅ Super Bot Fight Mode: On (if available)
+✅ JavaScript Detections: On
+```
+
+### 10. DDoS Protection
+
+**Navigate to:** Security > DDoS
+
+**Verification:**
+
+```
+✅ HTTP DDoS Attack Protection: On (automatic)
+✅ Network-layer DDoS Protection: On (automatic)
+
+Review sensitivity settings:
+- Set to "High" for maximum protection
+```
+
+### 11. Origin Rules (Hide Origin IP)
+
+**Action Items:**
+
+1. **Ensure origin IP is not exposed:**
+   - Remove any DNS A records pointing directly to origin
+   - Use Cloudflare proxy (orange cloud) for all records
+   - Configure firewall to only accept Cloudflare IPs
+
+2. **Cloudflare IP Ranges:**
+```bash
+# Add to origin server firewall (iptables/ufw)
+# Only allow traffic from Cloudflare IPs
+# List: https://www.cloudflare.com/ips/
+
+# Example ufw rules:
+ufw allow from 173.245.48.0/20
+ufw allow from 103.21.244.0/22
+ufw allow from 103.22.200.0/22
+# ... (add all Cloudflare IP ranges)
+
+# Deny all other traffic to application port
+ufw deny 3000
+```
+
+### 12. Cache Rules
+
+**Navigate to:** Caching > Cache Rules
+
+**Recommended for API:**
+
+```
+Rule: Bypass cache for API
+- URL: /api/*, /user/*, /admin/*, /proposal/*
+- Cache eligibility: Bypass cache
+- Origin cache control: Off
+
+Exception: Public endpoints
+- URL: /statsInfo/*, /faq/*
+- Cache eligibility: Eligible for cache
+- Edge TTL: 5 minutes
+```
+
+### 13. Monitoring & Alerts
+
+**Navigate to:** Analytics > Security
+
+**Set up alerts for:**
+
+```
+✅ Rate limit triggers > 100/hour
+✅ WAF blocks > 50/hour
+✅ DDoS attacks detected
+✅ Origin server errors (500/502/503)
+✅ SSL certificate expiration (30 days)
+```
+
+### 14. Audit Log
+
+**Navigate to:** Audit Log
+
+**Regular Reviews:**
+
+```
+Weekly: Review configuration changes
+Monthly: Review access logs for admin endpoints
+Quarterly: Full security configuration audit
+```
+
+---
+
 ## Positive Security Practices
 
 The codebase implements several good security practices:
@@ -2007,36 +2251,111 @@ The codebase implements several good security practices:
 
 ## Recommendations Summary
 
-### Immediate Actions (Deploy Today)
+### 🚨 IMMEDIATE - Production Critical (Deploy This Week)
 
-1. ✅ Add rate limiting (CRIT-001)
-2. ✅ Configure CORS properly (CRIT-002)
-3. ✅ Verify `.gitignore` includes secrets (MED-003)
-4. ✅ Enable HTTPS enforcement in production (MED-001)
+**These issues affect production users RIGHT NOW:**
 
-### This Week
+1. 🔴 **Fix 2FA encryption** (CRIT-001)
+   - Current: Weak CryptoJS encryption
+   - Impact: ALL 2FA users at risk
+   - Action: Implement AES-256-GCM + migration script
+   - Timeline: **THIS WEEK**
 
-1. ✅ Fix encryption for 2FA secrets (CRIT-003)
-2. ✅ Replace weak JWT secret (HIGH-001)
-3. ✅ Migrate dashboard auth to Firebase (HIGH-002)
-4. ✅ Add input validation (HIGH-003)
-5. ✅ Implement secure error handling (HIGH-005)
-6. ✅ Add request body size limits (MED-002)
+2. 🟠 **Replace weak JWT secret** (HIGH-001)
+   - Current: Base64-encoded password
+   - Impact: Dashboard authentication forgeable
+   - Action: Generate 64-byte random secret
+   - Timeline: **THIS WEEK**
 
-### This Month
+3. 🟠 **Migrate dashboard auth to Firebase** (HIGH-002)
+   - Current: Hardcoded credentials in .env
+   - Impact: Single point of failure
+   - Action: Use Firebase auth like other endpoints
+   - Timeline: **THIS WEEK**
 
-1. ✅ Add comprehensive logging (MED-006)
-2. ✅ Implement token cleanup (HIGH-006)
-3. ✅ Add security headers (MED-005)
-4. ✅ Fix async/await issues (MED-008)
-5. ✅ Update dependencies (DEP-001)
+4. 🟠 **Add input validation** (HIGH-003)
+   - Current: NoSQL injection possible
+   - Impact: Data exfiltration, query manipulation
+   - Action: Implement Joi validation
+   - Timeline: **THIS WEEK**
 
-### Long-term
+5. 🟠 **Fix error message leaks** (HIGH-005)
+   - Current: Stack traces in production
+   - Impact: Information disclosure
+   - Action: Implement secure error handler
+   - Timeline: **THIS WEEK**
 
-1. ✅ Add API versioning (LOW-001)
-2. ✅ Migrate to TypeScript (LOW-004)
-3. ✅ Standardize error codes (LOW-002)
-4. ✅ Fix ESLint issues (LOW-003)
+### 📋 Infrastructure Tasks (This Week)
+
+**Cloudflare Configuration Verification:**
+
+1. ✅ **Verify rate limiting rules**
+   - Check: `/user/verify-gauth-code` limited to 5/15min
+   - Check: Global API limited to 100/15min
+   - Action: Review Cloudflare dashboard
+
+2. ✅ **Implement application-level CORS**
+   - Even with Cloudflare protection
+   - Defense-in-depth principle
+   - Action: Add CORS whitelist (INFO-002)
+
+3. ✅ **Verify origin IP hidden**
+   - Ensure no direct access to origin
+   - Firewall rules: Accept only Cloudflare IPs
+   - Action: Check DNS records + firewall
+
+4. ✅ **Review Cloudflare WAF rules**
+   - SQL injection blocking
+   - XSS protection
+   - Action: Implement recommended custom rules
+
+### 🔧 High Priority (This Month)
+
+1. 🟠 **Implement token cleanup** (HIGH-006)
+   - Add Cloud Function for expired token removal
+   - Timeline: Within 2 weeks
+
+2. 🟡 **Add comprehensive logging** (MED-006)
+   - Security event logging
+   - Failed auth attempts
+   - Admin actions
+   - Timeline: Within 3 weeks
+
+3. 🟡 **Add request body size limits** (MED-002)
+   - Prevent DoS via large payloads
+   - Timeline: Within 1 week
+
+4. 🟡 **Fix async/await issues** (MED-008)
+   - Prevent unhandled promise rejections
+   - Timeline: Within 2 weeks
+
+5. 🟡 **Update dependencies** (DEP-001)
+   - Run `npm audit fix`
+   - Update critical packages
+   - Timeline: Within 1 week
+
+### 📊 Medium Priority (Next Quarter)
+
+1. 🟡 Add security headers (MED-005)
+2. 🟡 Fix password validation (MED-004)
+3. 🟡 Fix proposal data validation (MED-007)
+4. 🟡 Fix race condition in proposal update (MED-009)
+5. 🟢 Add API versioning (LOW-001)
+
+### 🎯 Long-term Improvements
+
+1. 🟢 Migrate to TypeScript (LOW-004)
+2. 🟢 Standardize HTTP status codes (LOW-002)
+3. 🟢 Fix ESLint rule violations (LOW-003)
+
+### ✅ Already Protected by Infrastructure
+
+These issues are **mitigated by Cloudflare** but still recommended for application-level defense:
+
+- ✅ Rate limiting (INFO-001) - **Handled by Cloudflare**
+- ✅ CORS protection (INFO-002) - **Partially handled by Cloudflare**
+- ✅ DDoS protection - **Handled by Cloudflare**
+- ✅ HTTPS enforcement - **Handled by Cloudflare**
 
 ---
 
@@ -2084,20 +2403,113 @@ describe('Security Tests', () => {
 
 ## Compliance Checklist
 
-- [ ] **GDPR** - Add data retention policies
-- [ ] **PCI DSS** - Not applicable (no card data)
-- [ ] **SOC 2** - Implement audit logging (MED-006)
-- [ ] **OWASP Top 10 2021**
-  - [x] A01: Broken Access Control - ✅ Fixed with authorization checks
-  - [ ] A02: Cryptographic Failures - ⚠️  Fix CRIT-003
-  - [ ] A03: Injection - ⚠️  Fix HIGH-003
-  - [x] A04: Insecure Design - ✅ Good architecture
-  - [ ] A05: Security Misconfiguration - ⚠️  Fix CRIT-002, MED-001
-  - [x] A06: Vulnerable Components - ⚠️  Fix DEP-001
-  - [x] A07: Auth Failures - ⚠️  Fix HIGH-001, HIGH-002
-  - [ ] A08: Software Integrity - ✅ Add SRI for frontend
-  - [ ] A09: Logging Failures - ⚠️  Fix MED-006
-  - [ ] A10: SSRF - ✅ Not applicable (no user-controlled URLs)
+**Production Environment Considerations:**
+
+Given that this is a **LIVE production application** on https://syshub-staging.syscoin.org with Cloudflare protection, here's the current compliance status:
+
+### GDPR Compliance
+
+- [ ] **Data retention policies** - Need to implement
+- [ ] **Right to be forgotten** - Partially implemented (`deleteUser` function exists)
+- [ ] **Data portability** - Not implemented
+- [ ] **Consent management** - Need to verify
+- [x] **Data encryption** - Firebase handles encryption at rest
+- [ ] **Breach notification** - Need incident response plan
+- [x] **Access logging** - Cloudflare provides some logging
+- [ ] **Privacy policy** - Need to verify
+
+**Action Required:** Implement data retention policies and comprehensive audit logging
+
+### PCI DSS
+
+- [x] **Not applicable** - No card data processed
+
+### SOC 2 Compliance
+
+- [ ] **Security logging** - Implement MED-006
+- [x] **Access controls** - Firebase auth + role-based access
+- [ ] **Change management** - Need formal process
+- [ ] **Incident response** - Need plan
+- [x] **Encryption** - HTTPS via Cloudflare
+- [ ] **Monitoring** - Need alerting for security events
+- [x] **Availability** - Cloudflare DDoS protection
+
+**Action Required:** Implement comprehensive logging and monitoring
+
+### OWASP Top 10 2021
+
+**Current Status (Adjusted for Infrastructure):**
+
+- [x] **A01: Broken Access Control**
+  - ✅ Firebase authentication
+  - ✅ Role-based authorization (`isAdmin` middleware)
+  - ✅ User ID verification (`req.user !== id`)
+  - ⚠️  Review admin endpoints
+
+- [ ] **A02: Cryptographic Failures**
+  - 🔴 Fix CRIT-001 (2FA encryption)
+  - ✅ HTTPS via Cloudflare
+  - ✅ Firebase handles database encryption
+  - ⚠️  Fix HIGH-001 (JWT secret)
+
+- [ ] **A03: Injection**
+  - ⚠️  Fix HIGH-003 (input validation)
+  - ⚠️  NoSQL injection risks
+  - ✅ Cloudflare WAF provides some protection
+  - 🔴 **Action Required:** Implement Joi validation
+
+- [x] **A04: Insecure Design**
+  - ✅ Good architecture (separation of concerns)
+  - ✅ Firebase for authentication
+  - ✅ Syscoin RPC for blockchain operations
+  - ✅ Cloudflare proxy for edge protection
+
+- [~] **A05: Security Misconfiguration**
+  - ✅ Rate limiting via Cloudflare (INFO-001)
+  - ✅ HTTPS via Cloudflare
+  - ⚠️  CORS needs application-level config (INFO-002)
+  - ⚠️  Error messages leak details (HIGH-005)
+  - ✅ Helmet.js installed
+  - 🔴 **Action Required:** Fix error handling, implement CORS
+
+- [~] **A06: Vulnerable Components**
+  - ⚠️  Fix DEP-001 (outdated dependencies)
+  - ⚠️  `moment` deprecated → migrate to `date-fns`
+  - ⚠️  Run `npm audit fix`
+  - 🔴 **Action Required:** Update dependencies
+
+- [ ] **A07: Identification & Authentication Failures**
+  - ⚠️  Fix HIGH-001 (weak JWT secret)
+  - ⚠️  Fix HIGH-002 (hardcoded credentials)
+  - ⚠️  Fix HIGH-004 (timing attack)
+  - ✅ 2FA support implemented
+  - ✅ Firebase handles password hashing
+  - 🔴 **Action Required:** Fix auth vulnerabilities
+
+- [x] **A08: Software & Data Integrity Failures**
+  - ✅ No user-uploaded executables
+  - ✅ Firebase SDK from official source
+  - [ ] Add SRI for frontend assets (if applicable)
+  - ✅ No auto-update mechanisms
+
+- [ ] **A09: Security Logging & Monitoring Failures**
+  - ⚠️  Fix MED-006 (comprehensive logging)
+  - ✅ Cloudflare Analytics available
+  - ✅ Morgan HTTP logging
+  - 🔴 **Action Required:** Add security event logging
+
+- [x] **A10: Server-Side Request Forgery (SSRF)**
+  - ✅ Not applicable (no user-controlled URLs)
+  - ✅ RPC endpoints are internal configuration
+  - ✅ No HTTP requests based on user input
+
+### Overall Compliance Score
+
+**Production Ready:** 🟡 **CONDITIONAL**
+
+✅ **Infrastructure-level protections** in place (Cloudflare)
+⚠️  **Application-level fixes** required before full production use
+🔴 **Critical fixes** needed for 2FA encryption and authentication
 
 ---
 
@@ -2109,15 +2521,122 @@ For questions about this audit report:
 - Assign priorities and owners
 - Track progress in project board
 
-**Next Steps:**
-1. Review this report with team
-2. Create implementation plan
-3. Assign issues to developers
-4. Set deadlines for critical fixes
-5. Re-audit after fixes deployed
+## 🚨 PRODUCTION DEPLOYMENT CHECKLIST
+
+**Before deploying to production (https://syshub.syscoin.org):**
+
+### Critical Fixes (MUST Complete)
+
+- [ ] **CRIT-001:** Implement AES-256-GCM encryption for 2FA secrets
+- [ ] **CRIT-001:** Run migration script for existing users
+- [ ] **HIGH-001:** Replace JWT secret with 64-byte random key
+- [ ] **HIGH-002:** Migrate dashboard auth to Firebase
+- [ ] **HIGH-003:** Implement Joi input validation
+- [ ] **HIGH-005:** Deploy secure error handler
+- [ ] **HIGH-006:** Implement token cleanup
+
+### Infrastructure Verification
+
+- [ ] Verify Cloudflare rate limiting is active (5/15min for auth endpoints)
+- [ ] Verify Cloudflare WAF rules are configured
+- [ ] Verify origin server firewall only accepts Cloudflare IPs
+- [ ] Verify SSL/TLS mode is "Full (strict)" in Cloudflare
+- [ ] Test that direct origin IP access is blocked
+- [ ] Verify Cloudflare Access is configured for /admin/* routes
+
+### Application Hardening
+
+- [ ] Implement application-level CORS whitelist
+- [ ] Add request body size limits (10kb)
+- [ ] Configure comprehensive security logging
+- [ ] Add monitoring alerts for security events
+- [ ] Update all dependencies (`npm audit fix`)
+
+### Testing
+
+- [ ] Run security test suite
+- [ ] Test 2FA with new encryption (staging)
+- [ ] Test authentication flows
+- [ ] Test input validation on all endpoints
+- [ ] Load testing with realistic traffic
+- [ ] Verify error messages don't leak info
+
+### Documentation
+
+- [ ] Document Cloudflare configuration
+- [ ] Document security event response plan
+- [ ] Update .env-example with new variables
+- [ ] Document encryption key rotation procedure
+
+### Monitoring Setup
+
+- [ ] Configure Cloudflare alerts (rate limits, WAF blocks)
+- [ ] Configure application logging (Winston)
+- [ ] Set up error tracking (Sentry/similar)
+- [ ] Configure uptime monitoring
+- [ ] Set up Firebase usage alerts
+
+## Next Steps
+
+**WEEK 1 (THIS WEEK):**
+
+1. ✅ Fix CRIT-001 (2FA encryption) - **URGENT**
+2. ✅ Fix HIGH-001, HIGH-002 (auth issues)
+3. ✅ Fix HIGH-003 (input validation)
+4. ✅ Fix HIGH-005 (error handling)
+5. ✅ Verify Cloudflare configuration
+6. ✅ Deploy to staging, test thoroughly
+
+**WEEK 2:**
+
+1. ✅ Fix HIGH-006 (token cleanup)
+2. ✅ Add comprehensive logging (MED-006)
+3. ✅ Update dependencies (DEP-001)
+4. ✅ Deploy to production with monitoring
+
+**WEEK 3-4:**
+
+1. ✅ Address remaining MEDIUM issues
+2. ✅ Implement enhanced security headers
+3. ✅ Code quality improvements
+
+## Emergency Contacts
+
+**If Security Incident Detected:**
+
+1. **Immediate:** Revoke all user tokens via Firebase
+2. **Immediate:** Enable "Under Attack Mode" in Cloudflare
+3. **Immediate:** Review Cloudflare Analytics for attack patterns
+4. **Within 1 hour:** Notify users if data breach suspected
+5. **Within 24 hours:** Complete incident report
+
+**Incident Response Checklist:**
+
+- [ ] Identify attack vector
+- [ ] Block malicious IPs in Cloudflare
+- [ ] Review application logs
+- [ ] Check for data exfiltration
+- [ ] Rotate all secrets (encryption keys, JWT secrets, RPC passwords)
+- [ ] Deploy emergency patches
+- [ ] Notify affected users
+- [ ] Post-mortem analysis
 
 ---
 
 **Report End**
 
-*This audit was generated by AI analysis. Manual penetration testing recommended for production systems.*
+**Audit Metadata:**
+- **Report Version:** 2.0 (Updated with infrastructure context)
+- **Environment:** Production (https://syshub-staging.syscoin.org)
+- **Infrastructure:** Cloudflare Proxy + Node.js/Express + Firebase
+- **Blockchain:** Syscoin Network
+- **Generated:** 2025-11-22
+- **Last Updated:** 2025-11-22
+
+*This audit was generated by AI analysis of the codebase. Manual penetration testing is strongly recommended for production systems handling sensitive data (2FA secrets, governance proposals, masternode operations).*
+
+**Recommended Next Steps:**
+1. Engage professional security auditor for penetration testing
+2. Consider bug bounty program after critical fixes deployed
+3. Regular quarterly security audits
+4. Automated security scanning in CI/CD pipeline
