@@ -76,7 +76,53 @@ CLEANUP_BATCH_SIZE=500
 
 ## Scheduling the Cleanup
 
-### Option 1: Cron Job (Linux/Mac)
+### Option 1: Docker Compose (Recommended) ✅
+
+**If using Docker Compose**, the cron service is already configured and runs automatically!
+
+```bash
+# Start both API and cron services
+docker-compose up -d
+
+# Check cron service logs
+docker-compose logs -f cron
+
+# View token cleanup logs
+docker-compose exec cron cat /app/logs/token-cleanup.log
+```
+
+**How it works:**
+- Uses the same GitHub Package image as the API
+- Overrides command to run cron daemon
+- Automatically runs token cleanup daily at 2 AM UTC
+- Logs to `/app/logs/token-cleanup.log`
+
+**Customize schedule:**
+
+Edit `docker-compose.yml` cron service command section:
+
+```yaml
+cron:
+  # ... other config
+  command:
+    - -c
+    - |
+      # Change this line for different schedule:
+      echo "0 2 * * * cd /app && node scripts/cleanup-revoked-tokens.js >> /app/logs/token-cleanup.log 2>&1" >> /tmp/crontab
+      # Examples:
+      # Twice daily: 0 2,14 * * *
+      # Every hour: 0 * * * *
+      # Every Sunday: 0 2 * * 0
+```
+
+Then restart:
+```bash
+docker-compose up -d --force-recreate cron
+```
+
+### Option 2: Cron Job (Linux/Mac)
+
+For non-Docker deployments:
 
 ```bash
 # Edit crontab
@@ -101,7 +147,7 @@ crontab -e
 0 * * * *
 ```
 
-### Option 2: systemd Timer (Linux)
+### Option 3: systemd Timer (Linux)
 
 Create a service file:
 ```ini

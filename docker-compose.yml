@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    image: ghcr.io/osiastedian/syshub-api:latest
+    ports:
+      - "${PORT_HTTP:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT_HTTP=${PORT_HTTP:-3000}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - syshub-network
+
+  # Cron service for scheduled tasks (token cleanup)
+  # Uses same GitHub Package image, just runs cron instead of API
+  cron:
+    image: ghcr.io/osiastedian/syshub-api:latest
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    env_file:
+      - .env
+    # Override command to run cron daemon
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        # Install cron if not present (Alpine-based)
+        apk add --no-cache dcron 2>/dev/null || true
+
+        # Create crontab for token cleanup
+        echo "# Token cleanup - daily at 2 AM UTC" > /tmp/crontab
+        echo "0 2 * * * cd /app && node scripts/cleanup-revoked-tokens.js >> /app/logs/token-cleanup.log 2>&1" >> /tmp/crontab
+
+        # Install crontab
+        crontab /tmp/crontab
+
+        # Create logs directory
+        mkdir -p /app/logs
+
+        # Display configured jobs
+        echo "[$(date)] Cron service started"
+        echo "Configured cron jobs:"
+        crontab -l
+        echo ""
+
+        # Run cron in foreground
+        crond -f -l 2
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - syshub-network
+
+networks:
+  syshub-network:
+    driver: bridge
