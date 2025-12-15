@@ -11,13 +11,16 @@ const { errorHandler, notFoundHandler } = require('./utils/errorHandler')
 const app = express()
 
 /* server configuration */
+// Body size limits (configurable via env, defaults to 10kb to prevent DoS attacks)
+const bodyLimit = process.env.BODY_SIZE_LIMIT || '10kb'
+
 app.use(bodyParser.json({
-  limit: '10kb', // Prevent payload-based DoS attacks
+  limit: bodyLimit,
   strict: true
 }))
 app.use(bodyParser.urlencoded({
   extended: false,
-  limit: '10kb'
+  limit: bodyLimit
 }))
 if (process.env.NODE_ENV === 'prod') {
   app.use(morgan('combined'))
