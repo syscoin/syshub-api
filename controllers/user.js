@@ -620,10 +620,20 @@ const signOut = async (req, res, next) => {
     })
   }
   try {
+    // Add token with expiration timestamp for automatic cleanup
+    // Firebase tokens expire after 1 hour, but refresh tokens last longer
+    // Keep revoked tokens for 7 days to prevent reuse, then auto-delete
+    const expirationDays = parseInt(process.env.REVOKED_TOKEN_TTL_DAYS, 10) || 7
     await admin
       .firestore()
       .collection(process.env.COLLECTION_NAME_TOKENS)
-      .add({ token })
+      .add({
+        token,
+        revokedAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(
+          Date.now() + (expirationDays * 24 * 60 * 60 * 1000)
+        )
+      })
     await admin.auth().revokeRefreshTokens(req.params.id)
     res.status(200).json({
       ok: true,
