@@ -11,17 +11,26 @@ const { errorHandler, notFoundHandler } = require('./utils/errorHandler')
 const app = express()
 
 /* server configuration */
-// Body size limits (configurable via env, defaults to 10kb to prevent DoS attacks)
-const bodyLimit = process.env.BODY_SIZE_LIMIT || '10kb'
+// Body size limits (configurable via env)
+// - Not set: defaults to 10kb (secure)
+// - Set to value (e.g., '1mb'): uses that limit
+// - Set to 'false': no limit (trust Cloudflare)
+const bodyLimitConfig = process.env.BODY_SIZE_LIMIT
+const shouldApplyLimit = bodyLimitConfig !== 'false'
+const bodyLimit = shouldApplyLimit ? (bodyLimitConfig || '10kb') : undefined
 
-app.use(bodyParser.json({
-  limit: bodyLimit,
-  strict: true
-}))
-app.use(bodyParser.urlencoded({
+const jsonParserOptions = {
+  strict: true,
+  ...(shouldApplyLimit && { limit: bodyLimit })
+}
+
+const urlencodedParserOptions = {
   extended: false,
-  limit: bodyLimit
-}))
+  ...(shouldApplyLimit && { limit: bodyLimit })
+}
+
+app.use(bodyParser.json(jsonParserOptions))
+app.use(bodyParser.urlencoded(urlencodedParserOptions))
 if (process.env.NODE_ENV === 'prod') {
   app.use(morgan('combined'))
 } else {

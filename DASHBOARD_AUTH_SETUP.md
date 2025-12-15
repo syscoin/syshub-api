@@ -120,10 +120,11 @@ FIREBASE_DOMAIN=your-firebase-domain
 FIREBASE_DATABASE=your-firebase-database
 FIREBASE_PROJECT_ID=your-project-id
 
-# Optional: Request body size limit (defaults to 10kb if not set)
-# Prevents DoS attacks via large payloads
-# Examples: 10kb, 1mb, 5mb
-BODY_SIZE_LIMIT=10kb
+# Optional: Request body size limit
+# - Not set: defaults to 10kb (recommended)
+# - Set to size: e.g., 1mb, 5mb
+# - Set to 'false': no limit (trust Cloudflare)
+# BODY_SIZE_LIMIT=10kb
 ```
 
 ## Testing the New Authentication

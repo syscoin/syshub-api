@@ -5,34 +5,76 @@
 ### Security Configuration
 
 #### BODY_SIZE_LIMIT
-**Default:** `10kb`
+**Default:** `10kb` (when not set)
 **Purpose:** Limits the size of incoming request bodies to prevent DoS attacks via large payloads
-**Format:** Express-style size string (e.g., `10kb`, `1mb`, `5mb`)
+**Format:** Express-style size string (e.g., `10kb`, `1mb`, `5mb`) or `false` to disable
 
 **Usage:**
 ```bash
 # In .env file
-BODY_SIZE_LIMIT=10kb
+
+# Option 1: Use default (10kb) - RECOMMENDED
+# BODY_SIZE_LIMIT=10kb
+# (or leave it unset/commented)
+
+# Option 2: Set custom limit
+BODY_SIZE_LIMIT=1mb
+
+# Option 3: Disable limit (trust Cloudflare)
+BODY_SIZE_LIMIT=false
 ```
 
-**When to adjust:**
-- **Keep at 10kb (default)** for most API endpoints - this is sufficient for JSON payloads
-- **Increase to 1mb-5mb** if you have specific endpoints that need to handle larger data (e.g., file uploads, large proposal descriptions)
-- **Never exceed 50mb** to maintain DoS protection
+**Configuration Options:**
+
+| Value | Behavior | Use Case |
+|-------|----------|----------|
+| Not set | Defaults to `10kb` | **Recommended** - Secure default |
+| `10kb`, `1mb`, etc. | Applies that limit | Custom limit for your needs |
+| `false` | No limit | Trust Cloudflare protection only |
+
+**When to use each option:**
+
+1. **Not set (default 10kb)** ✅ **RECOMMENDED**
+   - Best for most JSON APIs
+   - Defense-in-depth approach
+   - Protects if Cloudflare is bypassed
+
+2. **Custom limit (e.g., `1mb`, `5mb`)**
+   - Your API needs larger payloads
+   - Still want application-level protection
+   - Example: larger proposal descriptions
+
+3. **`false` (no limit)**
+   - You fully trust Cloudflare protection
+   - Development/testing environments
+   - Origin IP is completely hidden
 
 **Examples:**
 ```bash
-# Default - recommended for most cases
-BODY_SIZE_LIMIT=10kb
+# Production - secure default
+# BODY_SIZE_LIMIT=10kb
 
-# For APIs with larger payloads
+# Production - larger payloads needed
+BODY_SIZE_LIMIT=1mb
+
+# Staging - trust Cloudflare
+BODY_SIZE_LIMIT=false
+
+# Development - no Cloudflare, use app limit
 BODY_SIZE_LIMIT=100kb
-
-# For file upload endpoints (use with caution)
-BODY_SIZE_LIMIT=5mb
 ```
 
-**Security Note:** Larger limits increase the risk of memory exhaustion attacks. If you need to handle large uploads, consider implementing route-specific limits or using a dedicated file upload service.
+**Security Note:**
+- **Cloudflare allows up to 100MB** (free) or 500MB (enterprise)
+- If you set `BODY_SIZE_LIMIT=false`, you're relying entirely on Cloudflare
+- This is acceptable if:
+  - ✅ Origin IP is completely hidden
+  - ✅ All traffic goes through Cloudflare
+  - ✅ You trust Cloudflare's 100MB limit
+- Not recommended if:
+  - ❌ Origin IP might be exposed
+  - ❌ Development/staging without Cloudflare
+  - ❌ You want defense-in-depth
 
 ### Alternative: Route-Specific Limits
 
