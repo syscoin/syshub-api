@@ -1,0 +1,8 @@
+# Encryption Key Rotation Schedule
+# Runs on the 1st day of every month at 2:00 AM UTC
+# Format: minute hour day month weekday command
+
+# Monthly key rotation (1st of month at 2 AM)
+0 2 1 * * /app/docker/cron/rotate-key-cron.sh >> /var/log/cron.log 2>&1
+
+# Keep an empty line at the end of the file
