@@ -6,12 +6,19 @@ const cors = require('cors')
 const helmet = require('helmet')
 const compression = require('compression')
 const routes = require('./routes/index')
+const { errorHandler, notFoundHandler } = require('./utils/errorHandler')
 
 const app = express()
 
 /* server configuration */
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json({
+  limit: '10kb', // Prevent payload-based DoS attacks
+  strict: true
+}))
+app.use(bodyParser.urlencoded({
+  extended: false,
+  limit: '10kb'
+}))
 if (process.env.NODE_ENV === 'prod') {
   app.use(morgan('combined'))
 } else {
@@ -36,12 +43,11 @@ if (dotEnv.error) {
   console.log(dotEnv.error)
 }
 
-app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err)
-  }
-  return res.status(500).json({ ok: false, error: err.message })
-})
+// Handle 404 errors
+app.use(notFoundHandler)
+
+// Global error handler - sanitizes errors and prevents information leakage
+app.use(errorHandler)
 
 /** @global
  * @function

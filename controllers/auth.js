@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken')
-const { admin } = require('../utils/config')
+const { signInWithEmailAndPassword, getAuth } = require('firebase/auth')
+const { admin, firebaseApp } = require('../utils/config')
 /**
  * @function
  * @name register
@@ -82,55 +82,55 @@ const register = async (req, res, next) => {
  * @return {object} positive answer example {ok: true, token: token fakeUser}
  */
 
-// eslint-disable-next-line consistent-return
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body
-    if (
-      email !== process.env.EMAIL_DASHBOARD
-      || password !== process.env.PASSWORD_DASHBOARD
-    ) {
-      return res
-        .status(406)
-        .json({ ok: false, message: 'wrong username or password' })
+
+    if (!email || !password) {
+      return res.status(400).json({ ok: false, message: 'Required fields' })
     }
-    jwt.sign(
-      { account: process.env.EMAIL_DASHBOARD },
-      Buffer.from(process.env.PASSWORD_DASHBOARD).toString('base64'),
-      { expiresIn: '7d' },
-      (err, token) => {
-        if (err) {
-          throw err
-        }
-        return res.status(200).json({ ok: true, token })
-      },
-    )
+
+    // Use Firebase authentication instead of hardcoded credentials
+    let userCredential
+    try {
+      userCredential = await signInWithEmailAndPassword(
+        getAuth(firebaseApp),
+        email,
+        password
+      )
+    } catch (authErr) {
+      // Handle authentication errors
+      if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/user-not-found') {
+        return res.status(401).json({ ok: false, message: 'Invalid credentials' })
+      }
+      if (authErr.code === 'auth/too-many-requests') {
+        return res.status(429).json({ ok: false, message: 'Too many failed attempts. Please try again later.' })
+      }
+      if (authErr.code === 'auth/invalid-email') {
+        return res.status(400).json({ ok: false, message: 'Invalid email format' })
+      }
+      throw authErr
+    }
+
+    // Check if user has admin role
+    const roleDoc = await admin.firestore()
+      .collection(process.env.COLLECTION_NAME_ROLE)
+      .doc(userCredential.user.uid)
+      .get()
+
+    const roles = roleDoc.data()?.role || []
+    if (!roles.includes(process.env.ROLE_ADMIN)) {
+      return res.status(403).json({ ok: false, message: 'Access denied. Admin privileges required.' })
+    }
+
+    // Get Firebase ID token (already secure with proper signing)
+    const idToken = await userCredential.user.getIdToken()
+
+    return res.status(200).json({ ok: true, token: idToken })
+
   } catch (err) {
     next(err)
   }
-
-  /*
-     do not use!
-     try {
-       let {email, password} = req.body;
-       if (!email || !password) return res.status(406).json({ok: false, message: 'Required fields'});
-       firebase.auth().signInWithEmailAndPassword(email, password).then((fbUser) => {
-         firebase.auth().currentUser.getIdToken(true).then((idToken) => {
-           return res.status(200).json({ok: true, email, idToken, refreshToken: fbUser.user.refreshToken});
-         }).catch((err) => {
-           throw err
-         })
-       }).catch((err) => {
-         if (err.message === 'There is no user record corresponding to this identifier. The user may have been deleted.') return res.status(406).json({ok: false, message: 'non-existent user, please register'});
-         if (err.message === 'The password is invalid or the user does not have a password.') return res.status(406).json({ok: false, message: err.message});
-         if (err.message === 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.') return res.status(406).json({ok: false, message: err.message});
-         if (err.message === 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.') return res.status(500).json({ok: false, message: 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.'})
-         throw err
-       })
-     } catch (err) {
-       next(err)
-     }
-    */
 }
 
 module.exports = {
