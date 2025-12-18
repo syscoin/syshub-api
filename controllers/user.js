@@ -79,8 +79,8 @@ const getAllUser = async (req, res, next) => {
         throw err
       })
 
-    userRecordAuth.users.map(async (doc) => {
-      // eslint-disable-next-line array-callback-return
+    // MED-008: Remove unnecessary async - no await operations inside
+    userRecordAuth.users.forEach((doc) => {
       userRoleRecord.docs.find((el) => {
         if (el.id === doc.uid) {
           const { role } = el.data()

@@ -6,3 +6,4 @@
 /functions/node_modules
 .firebase-service-account.json
 /out
+/logs

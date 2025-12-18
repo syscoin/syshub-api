@@ -136,9 +136,57 @@ const validateParams = (schema) => {
   }
 }
 
+/**
+ * Validate password strength
+ * @param {string} password - Password to validate
+ * @returns {object} Validation result with valid flag and errors array
+ */
+const validatePassword = (password) => {
+  const errors = []
+
+  if (!password || password.length < 8) {
+    errors.push('Password must be at least 8 characters')
+  }
+
+  if (password && password.length > 128) {
+    errors.push('Password must be less than 128 characters')
+  }
+
+  if (password && !/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter')
+  }
+
+  if (password && !/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter')
+  }
+
+  if (password && !/\d/.test(password)) {
+    errors.push('Password must contain at least one number')
+  }
+
+  if (password && !/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/'`~;]/.test(password)) {
+    errors.push('Password must contain at least one special character')
+  }
+
+  // Check against common passwords
+  const commonPasswords = [
+    'password', 'password123', '12345678', 'qwerty', 'admin123',
+    'admin', 'letmein', 'welcome', 'monkey', '1234567890'
+  ]
+  if (password && commonPasswords.some(common => password.toLowerCase().includes(common))) {
+    errors.push('Password is too common or contains common patterns')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  }
+}
+
 module.exports = {
   schemas,
   validate,
   validateQuery,
-  validateParams
+  validateParams,
+  validatePassword
 }
