@@ -219,20 +219,30 @@ const migrateEncryption = (legacyEncrypted, masterKey) => {
 
 /**
  * Smart decrypt that handles both legacy and new formats
+ * Also supports dual-key decryption for key rotation scenarios
  *
  * @param {string} encryptedData - Encrypted data (any format)
  * @param {string} masterKey - Master encryption key
+ * @param {string} oldKey - Optional old key for dual-key support (from KEY_FOR_ENCRYPTION_OLD)
  * @returns {string} Decrypted plaintext
  */
-const decryptAesAuto = (encryptedData, masterKey) => {
+const decryptAesAuto = (encryptedData, masterKey, oldKey = null) => {
+  // Try new format with current key first
   try {
-    // Try new format first
     return decryptAes(encryptedData, masterKey);
   } catch (err) {
-    // If new format fails, try legacy format
+    // If new format fails, try legacy format with current key
     try {
       return decryptAesLegacy(encryptedData, masterKey);
     } catch (legacyErr) {
+      // If both fail and old key is provided, try legacy format with old key
+      if (oldKey) {
+        try {
+          return decryptAesLegacy(encryptedData, oldKey);
+        } catch (oldKeyErr) {
+          throw new Error(`Failed to decrypt with current key (new/legacy) and old key: ${err.message}`);
+        }
+      }
       throw new Error(`Failed to decrypt with both new and legacy methods: ${err.message}`);
     }
   }

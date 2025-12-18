@@ -31,19 +31,22 @@ const urlencodedParserOptions = {
 
 app.use(bodyParser.json(jsonParserOptions))
 app.use(bodyParser.urlencoded(urlencodedParserOptions))
+
+// Logging configuration
 if (process.env.NODE_ENV === 'prod') {
   app.use(morgan('combined'))
 } else {
   app.use(morgan('dev'))
 }
+
+// CORS - Cloudflare handles origin restrictions at edge
 app.use(cors())
+
+// Basic security headers - Cloudflare adds comprehensive headers at edge
 app.use(helmet())
+
 app.use(compression())
 routes.disable('x-powered-by')
-/** If you are in development environment comment this line * */
-// app.use(forceSsl);
-// app.set('views', path.join(__dirname, 'views'));
-// app.set('view engine', 'ejs')
 
 // app.use(express.static(__dirname + '/public'));
 app.use(express.static(`${process.cwd()}/frontend/dashboard/dist/dashboard/`))

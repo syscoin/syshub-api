@@ -67,6 +67,15 @@ const check = async (req, res, next) => {
       })
     }
 
+    // MED-007: Validate description size BEFORE hex conversion and RPC call
+    // This prevents wasted RPC calls and provides faster feedback to users
+    if (description && description.length > 512) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Description exceeds 512 characters limit',
+      })
+    }
+
     const objectProposal = [
       [
         'proposal',
@@ -86,6 +95,15 @@ const check = async (req, res, next) => {
       ],
     ]
     const hexProposal = strToHex(objectProposal[0][1])
+
+    // Additional validation: Check hex size after conversion
+    // This catches edge cases where the serialized data might be too large
+    if (hexProposal.length > 4096) { // 2KB hex = 4096 characters
+      return res.status(400).json({
+        ok: false,
+        message: 'Proposal data too large after serialization',
+      })
+    }
 
     const verifyHex = await clientRPC
       .callRpc('gobject_check', [hexProposal])
@@ -802,21 +820,26 @@ const getAllHiddenProposal = async (req, res, next) => {
       }
     })
 
-    proposalHash.map(async (e) => {
-      const exist = Object.keys(gobjectData).find((elem) => elem === e.hash)
-      if (typeof exist === 'undefined') {
-        const i = proposalHash.indexOf(e)
-        proposalHash.splice(i, 1)
-        await admin
-          .firestore()
-          .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
-          .doc(e.uid)
-          .delete()
-          .catch((err) => {
-            throw err
-          })
-      }
-    })
+    // MED-008: Fix unhandled promise rejections - use Promise.all with proper error handling
+    await Promise.all(
+      proposalHash.map(async (e) => {
+        const exist = Object.keys(gobjectData).find((elem) => elem === e.hash)
+        if (typeof exist === 'undefined') {
+          const i = proposalHash.indexOf(e)
+          proposalHash.splice(i, 1)
+          try {
+            await admin
+              .firestore()
+              .collection(process.env.COLLECTION_PROPOSAL_HIDDEN)
+              .doc(e.uid)
+              .delete()
+          } catch (err) {
+            // Log error but don't fail entire operation
+            console.error('Failed to delete hidden proposal:', err)
+          }
+        }
+      })
+    )
     proposalHash.sort((a, b) => a.createTime - b.createTime).reverse()
     return res.status(200).json({
       ok: true,

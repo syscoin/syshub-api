@@ -5,7 +5,7 @@ const {
   validateAddress,
 } = require('../utils/helpers')
 const { clientRPC, admin } = require('../utils/config')
-const { encryptAes, decryptAes } = require('../utils/encrypt')
+const { encryptAes, decryptAes, decryptAesAuto } = require('../utils/encrypt')
 /**
  * @function
  * @name getAllMasterNodesByUser
@@ -101,9 +101,10 @@ const getAllVotingAddressByUser = async (req, res, next) => {
           data.uid = stringValue
           Object.keys(addrValue).forEach((key) => {
             if (!addrValue[key].timestampValue) {
-              data[key] = decryptAes(
+              data[key] = decryptAesAuto(
                 addrValue[key].stringValue,
-                process.env.KEY_FOR_ENCRYPTION
+                process.env.KEY_FOR_ENCRYPTION,
+                process.env.KEY_FOR_ENCRYPTION_OLD // Support old key for dual-key migration
               )
             } else {
               data[key] = Number(addrValue[key].timestampValue.nanos)
@@ -236,9 +237,10 @@ const getVotingAddress = async (req, res, next) => {
 
         Object.keys(fieldsProto).forEach((key) => {
           if (key !== 'date') {
-            decryptData[key] = decryptAes(
+            decryptData[key] = decryptAesAuto(
               fieldsProto[key].stringValue,
-              process.env.KEY_FOR_ENCRYPTION
+              process.env.KEY_FOR_ENCRYPTION,
+              process.env.KEY_FOR_ENCRYPTION_OLD // Support old key for dual-key migration
             )
           } else if (key === 'date') {
             decryptData[key] = Number(fieldsProto[key].timestampValue.seconds)
@@ -359,10 +361,11 @@ const createVotingAddress = async (req, res, next) => {
             throw err
           })
         return {
-          name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
-          address: decryptAes(
+          name: decryptAesAuto(name.stringValue, process.env.KEY_FOR_ENCRYPTION, process.env.KEY_FOR_ENCRYPTION_OLD),
+          address: decryptAesAuto(
             addrUser.stringValue,
-            process.env.KEY_FOR_ENCRYPTION
+            process.env.KEY_FOR_ENCRYPTION,
+            process.env.KEY_FOR_ENCRYPTION_OLD
           ),
         }
       })
@@ -571,10 +574,11 @@ const updateVotingAddress = async (req, res, next) => {
             throw err
           })
         return {
-          name: decryptAes(name.stringValue, process.env.KEY_FOR_ENCRYPTION),
-          address: decryptAes(
+          name: decryptAesAuto(name.stringValue, process.env.KEY_FOR_ENCRYPTION, process.env.KEY_FOR_ENCRYPTION_OLD),
+          address: decryptAesAuto(
             addrUser.stringValue,
-            process.env.KEY_FOR_ENCRYPTION
+            process.env.KEY_FOR_ENCRYPTION,
+            process.env.KEY_FOR_ENCRYPTION_OLD
           ),
         }
       })

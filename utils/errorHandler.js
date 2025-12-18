@@ -11,18 +11,21 @@ class AppError extends Error {
   }
 }
 
+const { logger } = require('./logger')
+
 /**
  * Error handler middleware for Express
  * Sanitizes errors and prevents leaking internal details to clients
  */
 const errorHandler = (err, req, res, next) => {
-  // Log full error details for debugging (should integrate with proper logging)
-  console.error({
+  // Log full error details using Winston logger
+  logger.error({
     message: err.message,
     stack: err.stack,
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
+    user: req.user || 'anonymous',
     timestamp: new Date().toISOString()
   })
 
