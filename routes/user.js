@@ -11,13 +11,14 @@ const {
 } = require('../controllers/user')
 const fbAuth = require('../middlewares/fbAuth')
 const isAdmin = require('../middlewares/isAdmin')
+const { schemas, validate } = require('../utils/validators')
 
 const router = express.Router()
 
 router.get('/', [fbAuth, isAdmin], getAllUser)
 router.get('/verify2fa/:id', fbAuth, getUser2fa)
 router.get('/:id', fbAuth, getOneUser)
-router.put('/extend/:id', fbAuth, updateActionsUser)
+router.put('/extend/:id', fbAuth, validate(schemas.updateUserActions), updateActionsUser)
 router.put('/:id', fbAuth, updateUser)
 router.delete('/:id', fbAuth, deleteUser)
 router.post('/revoke/:id', fbAuth, signOut)

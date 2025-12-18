@@ -6,12 +6,31 @@ const cors = require('cors')
 const helmet = require('helmet')
 const compression = require('compression')
 const routes = require('./routes/index')
+const { errorHandler, notFoundHandler } = require('./utils/errorHandler')
 
 const app = express()
 
 /* server configuration */
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }))
+// Body size limits (configurable via env)
+// - Not set: defaults to 10kb (secure)
+// - Set to value (e.g., '1mb'): uses that limit
+// - Set to 'false': no limit (trust Cloudflare)
+const bodyLimitConfig = process.env.BODY_SIZE_LIMIT
+const shouldApplyLimit = bodyLimitConfig !== 'false'
+const bodyLimit = shouldApplyLimit ? (bodyLimitConfig || '10kb') : undefined
+
+const jsonParserOptions = {
+  strict: true,
+  ...(shouldApplyLimit && { limit: bodyLimit })
+}
+
+const urlencodedParserOptions = {
+  extended: false,
+  ...(shouldApplyLimit && { limit: bodyLimit })
+}
+
+app.use(bodyParser.json(jsonParserOptions))
+app.use(bodyParser.urlencoded(urlencodedParserOptions))
 if (process.env.NODE_ENV === 'prod') {
   app.use(morgan('combined'))
 } else {
@@ -36,12 +55,11 @@ if (dotEnv.error) {
   console.log(dotEnv.error)
 }
 
-app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err)
-  }
-  return res.status(500).json({ ok: false, error: err.message })
-})
+// Handle 404 errors
+app.use(notFoundHandler)
+
+// Global error handler - sanitizes errors and prevents information leakage
+app.use(errorHandler)
 
 /** @global
  * @function
