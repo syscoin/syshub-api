@@ -1,0 +1,39 @@
+# Add this service to your existing docker-compose.yml
+
+services:
+  # Existing api service (for reference)
+  api:
+    image: ghcr.io/syscoin/syshub-api:master
+    env_file:
+      - .env.api
+    volumes:
+      - .firebase-service-account.json:/app/.firebase-service-account.json:ro
+      - .env.api:/app/.env:ro
+    ports:
+      - 3001:3001
+    network_mode: bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # NEW: Key rotation cron sidecar
+  key-rotation-cron:
+    build:
+      context: .
+      dockerfile: docker/cron/Dockerfile
+    container_name: syshub-key-rotation-cron
+    restart: unless-stopped
+    env_file:
+      - .env.api
+    volumes:
+      # Mount .env.api as read-write so rotation script can update it
+      - .env.api:/app/.env:rw
+      - .firebase-service-account.json:/app/.firebase-service-account.json:ro
+      # Mount docker socket to restart API container
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persist rotation logs
+      - ./logs/key-rotation:/var/log:rw
+    network_mode: bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - api
